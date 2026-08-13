@@ -16,6 +16,7 @@ import {
 } from "./engine.js";
 import { drawWorld, cameraX, setSprites } from "./draw.js";
 import { loadSprites } from "./assets.js";
+import { createGameAudio } from "./audio.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -26,6 +27,9 @@ const modal = document.getElementById("modal");
 const title = document.getElementById("title");
 const ending = document.getElementById("ending");
 const pause = document.getElementById("pause");
+const btnMute = document.getElementById("btn-mute");
+
+const audio = createGameAudio();
 
 let scene = "title";
 let state = createState();
@@ -38,11 +42,13 @@ let lastProgress = performance.now();
 let hintArrow = false;
 let lastTs = 0;
 let lastGate = null;
+let stepClock = 0;
 
 const input = { left: false, right: false, jump: false };
 
 window.addEventListener("keydown", (e) => {
   keys[e.code] = true;
+  audio.unlock();
   if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space"].includes(e.code)) e.preventDefault();
   if (e.code === "Space" || e.code === "Enter") {
     if (modalKind === "talk" || modalKind === "toast") {
@@ -71,6 +77,25 @@ document.getElementById("btn-resume").addEventListener("click", () => {
 });
 document.getElementById("btn-quit").addEventListener("click", showTitle);
 document.getElementById("btn-action").addEventListener("click", onInteract);
+if (btnMute) {
+  btnMute.addEventListener("click", () => {
+    audio.unlock();
+    if (audio._musicOn) {
+      audio.stopMusic();
+      btnMute.textContent = "เพลง: ปิด";
+      btnMute.setAttribute("aria-label", "เปิดเพลง");
+    } else {
+      audio.startMusic();
+      btnMute.textContent = "เพลง: เปิด";
+      btnMute.setAttribute("aria-label", "ปิดเพลง");
+    }
+  });
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) audio.stopMusic();
+});
+window.addEventListener("beforeunload", () => audio.stopMusic());
 
 function startGame() {
   state = resetState();
@@ -82,6 +107,8 @@ function startGame() {
   pause.hidden = true;
   lastProgress = performance.now();
   lastGate = null;
+  stepClock = 0;
+  audio.unlock();
   applyEvent(state, { type: "talk_yaika" });
   openTalk("ยายกา", DIALOGUE.yaikaStart);
 }
@@ -91,6 +118,11 @@ function showTitle() {
   title.hidden = false;
   ending.hidden = true;
   pause.hidden = true;
+  audio.stopMusic();
+  if (btnMute) {
+    btnMute.textContent = "เพลง: ปิด";
+    btnMute.setAttribute("aria-label", "เปิดเพลง");
+  }
   closeModal();
 }
 
@@ -121,12 +153,14 @@ function onInteract() {
     const r = applyEvent(state, { type: "pickup_trash", id: item.id });
     if (r.ok) {
       markProgress();
+      audio.play("pickup");
       openToast("เก็บขยะแล้ว");
     }
   } else if (item.type === "hole") {
     const r = applyEvent(state, { type: "plant", hole: item.hole, zone: "mountain" });
     if (r.ok) {
       markProgress();
+      audio.play("plant");
       openToast("ปลูกต้นไม้แล้ว");
     }
   } else if (item.type === "sort") {
@@ -137,6 +171,7 @@ function onInteract() {
 function openTalk(who, text, after = null) {
   modalKind = "talk";
   modalData = { after };
+  audio.play("talk");
   modal.hidden = false;
   modal.innerHTML = `<div class="box"><p class="who">${esc(who)}</p><p>${esc(text)}</p><button type="button" id="btn-next">ต่อไป</button></div>`;
   document.getElementById("btn-next").addEventListener("click", onInteract);
@@ -197,10 +232,12 @@ function answerQuestion(choice) {
   const r = applyEvent(state, { type: "answer", question: id, choice });
   const fb = document.getElementById("q-feedback");
   if (!r.ok) {
+    audio.play("wrong");
     if (fb) fb.textContent = "ยังไม่ถูก ลองใหม่ได้";
     return;
   }
   markProgress();
+  audio.play("correct");
   if (id === "q2") {
     openTalk("สามเณรน้อย", DIALOGUE.noviceGive);
   } else {
@@ -244,11 +281,13 @@ function pickWater(id, btn) {
   if (modalData.picked.length < 4) return;
   const r = applyEvent(state, { type: "sort_water", order: modalData.picked });
   if (!r.ok) {
+    audio.play("wrong");
     document.getElementById("sort-fb").textContent = "ลำดับยังไม่ถูก ลองใหม่";
     setTimeout(() => openSort(), 700);
     return;
   }
   markProgress();
+  audio.play("correct");
   openTalk("ยายกา", `${DIALOGUE.yaikaEnd1} ${DIALOGUE.yaikaEnd2}`, "ending");
 }
 
@@ -257,6 +296,8 @@ function showEnding() {
   closeModal();
   ending.hidden = false;
   title.hidden = true;
+  audio.stopMusic();
+  audio.play("win");
   const stars = starCount(state);
   document.getElementById("end-stars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
   document.getElementById("end-lines").innerHTML = ENDING_LINES.map((l) => `<li>${esc(l)}</li>`).join("");
@@ -297,9 +338,22 @@ function loop(ts) {
     input.right = !!(keys.ArrowRight || keys.KeyD);
     input.jump = jumpBuffered;
     jumpBuffered = false;
+    const wasOnGround = player.onGround;
+    if (input.jump && wasOnGround) audio.play("jump");
     const solids = buildSolids((zone) => canEnter(state, zone));
     stepPlayer(player, input, solids, dt);
+    if (!wasOnGround && player.onGround) audio.play("land");
+    if (player.onGround && (input.left || input.right)) {
+      stepClock += dt;
+      if (stepClock >= 0.28) {
+        audio.play("step");
+        stepClock = 0;
+      }
+    } else {
+      stepClock = 0.28;
+    }
     if (fellInWater(player)) {
+      audio.play("splash");
       const zone = zoneNameAt(player.x);
       const spawn = CHECKPOINTS[zone] || CHECKPOINTS.stream;
       player.x = spawn.x;
