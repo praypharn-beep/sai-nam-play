@@ -1,5 +1,9 @@
 export const SPRITE_PATHS = {
   player: "assets/characters/nong-mok.png",
+  playerIdle: "assets/characters/nong-mok-idle.png",
+  playerJump: "assets/characters/nong-mok-jump.png",
+  playerWalk2: "assets/characters/nong-mok-walk-2.png",
+  playerWalk3: "assets/characters/nong-mok-walk-3.png",
   yaika: "assets/characters/yaika.png",
   novice: "assets/characters/novice.png",
   far: "assets/backgrounds/phu-far.png",
@@ -7,8 +11,37 @@ export const SPRITE_PATHS = {
   near: "assets/backgrounds/phu-near.png",
 };
 
+export const WALK_FPS = 8;
+
+export function playerPose(player) {
+  if (!player || !player.onGround) return "jump";
+  if (Math.abs(player.vx || 0) > 0) return "walk";
+  return "idle";
+}
+
+export function walkFrameIndex(time, frameCount) {
+  const n = Math.max(1, frameCount | 0);
+  const t = Number.isFinite(time) ? Math.max(0, time) : 0;
+  return Math.floor(t * WALK_FPS) % n;
+}
+
+export function walkFrames(sprites) {
+  if (!sprites) return [];
+  return [sprites.player, sprites.playerWalk2, sprites.playerWalk3].filter(Boolean);
+}
+
+export function pickPlayerSprite(sprites, player, time = 0) {
+  if (!sprites) return null;
+  const pose = playerPose(player);
+  if (pose === "jump") return sprites.playerJump || sprites.player || null;
+  if (pose === "idle") return sprites.playerIdle || sprites.player || null;
+  const frames = walkFrames(sprites);
+  if (!frames.length) return null;
+  return frames[walkFrameIndex(time, frames.length)];
+}
+
 export async function loadSprites() {
-  const sprites = { player: null, yaika: null, novice: null, far: null, mid: null, near: null };
+  const sprites = {};
   await Promise.all(
     Object.entries(SPRITE_PATHS).map(async ([key, path]) => {
       sprites[key] = await tryLoad(path);

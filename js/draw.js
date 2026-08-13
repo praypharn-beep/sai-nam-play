@@ -6,8 +6,20 @@ import {
   waterRects,
   zoneNameAt,
 } from "./engine.js";
+import { pickPlayerSprite, playerPose } from "./assets.js";
 
-let sprites = { player: null, yaika: null, novice: null, far: null, mid: null, near: null };
+let sprites = {
+  player: null,
+  playerIdle: null,
+  playerJump: null,
+  playerWalk2: null,
+  playerWalk3: null,
+  yaika: null,
+  novice: null,
+  far: null,
+  mid: null,
+  near: null,
+};
 
 export function setSprites(next) {
   sprites = next || sprites;
@@ -341,17 +353,24 @@ function trash(ctx, x, y, kind) {
 export function drawPlayer(ctx, player, t) {
   const x = player.x + player.w / 2;
   const y = player.y + player.h;
-  const bob = player.onGround && player.vx !== 0 ? Math.sin(t * 12) * 2 : 0;
-  if (sprites.player) {
-    drawSprite(ctx, sprites.player, x, y + bob, player.facing, 92);
+  const pose = playerPose(player);
+  const bob = pose === "walk" ? Math.sin(t * 12) * 2 : 0;
+  const img = pickPlayerSprite(sprites, player, t);
+  if (img) {
+    drawSprite(ctx, img, x, y + bob, player.facing, 92);
     return;
   }
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(player.facing, 1);
 
+  const step = pose === "walk" ? Math.sin(t * 12) * 4 : 0;
+  const tuck = pose === "jump" ? 6 : 0;
   ctx.fillStyle = "#1f3a73";
-  ctx.fillRect(-10, -22 + bob, 20, 18);
+  ctx.fillRect(-12, -22 + bob + tuck, 8, 18 - tuck);
+  ctx.fillRect(2, -22 + bob + tuck, 8, 18 - tuck);
+  ctx.fillRect(-10 + step, -10 + bob + tuck, 8, 10);
+  ctx.fillRect(2 - step, -10 + bob + tuck, 8, 10);
   ctx.fillStyle = "#f5f5f5";
   ctx.fillRect(-12, -36 + bob, 24, 16);
   ctx.fillStyle = "#f3c7a0";
@@ -369,7 +388,7 @@ export function drawPlayer(ctx, player, t) {
   ctx.ellipse(-12, -34 + bob, 8, 6, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.ellipse(-18, -40 + bob, 5, 8, -0.6, 0, Math.PI * 2);
+  ctx.ellipse(-18, -40 + bob + (pose === "jump" ? -3 : 0), 5, 8, -0.6, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#2a241c";
   ctx.fillRect(-14, -36 + bob, 2, 2);
