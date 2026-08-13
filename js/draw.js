@@ -7,7 +7,7 @@ import {
   zoneNameAt,
 } from "./engine.js";
 
-let sprites = { player: null, yaika: null, novice: null, far: null };
+let sprites = { player: null, yaika: null, novice: null, far: null, mid: null };
 
 export function setSprites(next) {
   sprites = next || sprites;
@@ -92,6 +92,10 @@ function mountain(ctx, x, y, w, h) {
 }
 
 function drawMid(ctx, camX) {
+  if (sprites.mid) {
+    drawMidImage(ctx, camX);
+    return;
+  }
   const shift = -(camX * 0.4);
   if (sprites.far) {
     for (let i = 0; i < 8; i++) {
@@ -101,6 +105,19 @@ function drawMid(ctx, camX) {
   }
   for (let i = 0; i < 14; i++) {
     tree(ctx, shift + 80 + i * 170, 300, 26 + (i % 3) * 6, "#3d8f4a");
+  }
+}
+
+function drawMidImage(ctx, camX) {
+  const img = sprites.mid;
+  const targetH = 248;
+  const targetW = targetH * (img.width / img.height);
+  const y = GROUND_TOP - targetH + 20;
+  const speed = 0.42;
+  let x = -((camX * speed) % targetW);
+  if (x > 0) x -= targetW;
+  for (let px = x - targetW; px < CANVAS_W + targetW; px += targetW) {
+    ctx.drawImage(img, px, y, targetW, targetH);
   }
 }
 
