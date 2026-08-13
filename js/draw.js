@@ -309,7 +309,7 @@ export function drawPlayer(ctx, player, t) {
   const y = player.y + player.h;
   const bob = player.onGround && player.vx !== 0 ? Math.sin(t * 12) * 2 : 0;
   if (sprites.player) {
-    drawSprite(ctx, sprites.player, x, y + bob, player.facing, 64);
+    drawSprite(ctx, sprites.player, x, y + bob, player.facing, 92);
     return;
   }
   ctx.save();
