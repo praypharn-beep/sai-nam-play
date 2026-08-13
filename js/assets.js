@@ -9,6 +9,12 @@ export const SPRITE_PATHS = {
   far: "assets/backgrounds/phu-far.png",
   mid: "assets/backgrounds/phu-mid.png",
   near: "assets/backgrounds/phu-near.png",
+  tileGround: "assets/tiles/ground-grass.png",
+  tilePlatform: "assets/tiles/platform.png",
+  tileTree: "assets/tiles/tree.png",
+  tileGrass: "assets/tiles/grass.png",
+  tileRock: "assets/tiles/rock.png",
+  tileFence: "assets/tiles/fence.png",
 };
 
 export const WALK_FPS = 3;

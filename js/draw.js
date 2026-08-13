@@ -159,8 +159,14 @@ function drawZones(ctx, state, t) {
   platform(ctx, 4400, 250, 220, "#7a5a3a");
 
   house(ctx, 70, GROUND_TOP);
+  prop(ctx, "tileFence", 520, GROUND_TOP, 110, 42);
   veggies(ctx, 1180, GROUND_TOP, state.q1Correct);
+  prop(ctx, "tileTree", 1500, GROUND_TOP, 90, 140);
+  prop(ctx, "tileGrass", 1120, GROUND_TOP, 36, 28);
   temple(ctx, 2080, GROUND_TOP);
+  prop(ctx, "tileRock", 3100, GROUND_TOP, 40, 30);
+  prop(ctx, "tileRock", 3720, GROUND_TOP, 48, 34);
+  prop(ctx, "tileTree", 4100, GROUND_TOP, 80, 120);
   sign(ctx, 1240, GROUND_TOP, "สวน");
   sign(ctx, 2980, GROUND_TOP, "ห้วย");
   sign(ctx, 4480, 250, "สายน้ำ");
@@ -176,6 +182,16 @@ function drawZones(ctx, state, t) {
 function groundStrip(ctx, x, w, y, top, soil) {
   ctx.fillStyle = soil;
   ctx.fillRect(x, y, w, 200);
+  if (sprites.tileGround) {
+    const img = sprites.tileGround;
+    const tileW = 72;
+    const tileH = 78;
+    for (let px = x; px < x + w - 1; px += tileW) {
+      const dw = Math.min(tileW, x + w - px);
+      ctx.drawImage(img, 0, 0, img.width * (dw / tileW), img.height, px, y - 16, dw, tileH);
+    }
+    return;
+  }
   ctx.fillStyle = top;
   ctx.fillRect(x, y, w, 18);
   ctx.fillStyle = "#4e9a32";
@@ -185,10 +201,20 @@ function groundStrip(ctx, x, w, y, top, soil) {
 }
 
 function platform(ctx, x, y, w, color) {
+  if (sprites.tilePlatform) {
+    ctx.drawImage(sprites.tilePlatform, x - 4, y - 18, w + 8, 44);
+    return;
+  }
   ctx.fillStyle = color;
   ctx.fillRect(x, y, w, 22);
   ctx.fillStyle = "#6dbe45";
   ctx.fillRect(x, y, w, 8);
+}
+
+function prop(ctx, key, x, y, w, h) {
+  const img = sprites[key];
+  if (!img) return;
+  ctx.drawImage(img, x - w / 2, y - h, w, h);
 }
 
 function house(ctx, x, y) {
