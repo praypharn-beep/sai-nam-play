@@ -154,14 +154,16 @@ export function interactables(state) {
     { id: "q1", type: "question", question: "q1", x: 1240, y: GROUND_TOP - 70, w: 36, h: 70, zone: "garden" },
     { id: "novice", type: "question", question: "q2", x: 2260, y: GROUND_TOP - 56, w: 40, h: 56, zone: "temple" },
     { id: "q3", type: "question", question: "q3", x: 2980, y: GROUND_TOP - 70, w: 36, h: 70, zone: "stream" },
-    { id: "sort", type: "sort", x: 4480, y: 250 - 70, w: 36, h: 70, zone: "mountain" },
   ];
+  if (state.treesPlanted >= 3) {
+    list.push({ id: "sort", type: "sort", x: 4700, y: GROUND_TOP - 70, w: 36, h: 70, zone: "mountain" });
+  }
   if (!state.trash.bag) list.push({ id: "bag", type: "trash", x: 3185, y: 390 - 22, w: 24, h: 22, zone: "stream" });
   if (!state.trash.bottle) list.push({ id: "bottle", type: "trash", x: 3345, y: 350 - 22, w: 18, h: 22, zone: "stream" });
   if (!state.trash.foam) list.push({ id: "foam", type: "trash", x: 3505, y: 390 - 22, w: 24, h: 18, zone: "stream" });
-  if (!state.planted[1]) list.push({ id: 1, type: "hole", hole: 1, x: 4080, y: 370 - 16, w: 28, h: 16, zone: "mountain" });
-  if (!state.planted[2]) list.push({ id: 2, type: "hole", hole: 2, x: 4260, y: 310 - 16, w: 28, h: 16, zone: "mountain" });
-  if (!state.planted[3]) list.push({ id: 3, type: "hole", hole: 3, x: 4440, y: 250 - 16, w: 28, h: 16, zone: "mountain" });
+  if (!state.planted[1]) list.push({ id: 1, type: "hole", hole: 1, x: 4080, y: 370 - 16, w: 40, h: 24, zone: "mountain" });
+  if (!state.planted[2]) list.push({ id: 2, type: "hole", hole: 2, x: 4260, y: 310 - 16, w: 40, h: 24, zone: "mountain" });
+  if (!state.planted[3]) list.push({ id: 3, type: "hole", hole: 3, x: 4440, y: 250 - 16, w: 48, h: 28, zone: "mountain" });
   return list;
 }
 

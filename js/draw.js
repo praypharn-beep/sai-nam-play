@@ -169,7 +169,7 @@ function drawZones(ctx, state, t) {
   prop(ctx, "tileTree", 4100, GROUND_TOP, 80, 120);
   sign(ctx, 1240, GROUND_TOP, "สวน");
   sign(ctx, 2980, GROUND_TOP, "ห้วย");
-  sign(ctx, 4480, 250, "สายน้ำ");
+  if (state.treesPlanted >= 3) sign(ctx, 4700, GROUND_TOP, "สายน้ำ");
 
   if (state.planted[1]) sapling(ctx, 4090, 370, t);
   if (state.planted[2]) sapling(ctx, 4270, 310, t);
