@@ -28,6 +28,9 @@ const title = document.getElementById("title");
 const ending = document.getElementById("ending");
 const pause = document.getElementById("pause");
 const btnMute = document.getElementById("btn-mute");
+const touchLeft = document.getElementById("btn-left");
+const touchRight = document.getElementById("btn-right");
+const touchJump = document.getElementById("btn-jump");
 
 const audio = createGameAudio();
 
@@ -70,6 +73,30 @@ window.addEventListener("keydown", (e) => {
 window.addEventListener("keyup", (e) => {
   keys[e.code] = false;
 });
+
+function bindHoldButton(button, code) {
+  if (!button) return;
+  const release = () => { keys[code] = false; };
+  button.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    button.setPointerCapture?.(e.pointerId);
+    keys[code] = true;
+    audio.unlock();
+  });
+  button.addEventListener("pointerup", release);
+  button.addEventListener("pointercancel", release);
+  button.addEventListener("lostpointercapture", release);
+}
+
+bindHoldButton(touchLeft, "ArrowLeft");
+bindHoldButton(touchRight, "ArrowRight");
+if (touchJump) {
+  touchJump.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    jumpBuffered = true;
+    audio.unlock();
+  });
+}
 
 document.getElementById("btn-start").addEventListener("click", startGame);
 document.getElementById("btn-again").addEventListener("click", startGame);
