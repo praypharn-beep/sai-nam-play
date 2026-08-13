@@ -34,7 +34,7 @@ export function createPlayer(zone = "homestay") {
     vy: 0,
     w: PLAYER_W,
     h: PLAYER_H,
-    onGround: false,
+    onGround: true,
     facing: 1,
   };
 }

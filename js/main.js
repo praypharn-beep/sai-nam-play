@@ -289,6 +289,7 @@ function loop(ts) {
       player.y = spawn.y;
       player.vx = 0;
       player.vy = 0;
+      player.onGround = true;
     }
     if (performance.now() - lastProgress > 45000) hintArrow = true;
   }
