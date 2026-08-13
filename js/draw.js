@@ -7,6 +7,21 @@ import {
   zoneNameAt,
 } from "./engine.js";
 
+let sprites = { player: null, yaika: null, novice: null };
+
+export function setSprites(next) {
+  sprites = next || sprites;
+}
+
+function drawSprite(ctx, img, x, y, facing = 1, height = 64) {
+  const w = (img.width / img.height) * height;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(facing, 1);
+  ctx.drawImage(img, -w / 2, -height, w, height);
+  ctx.restore();
+}
+
 export function drawWorld(ctx, camX, player, state, t) {
   ctx.save();
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
@@ -238,6 +253,10 @@ function drawActors(ctx, state, t) {
 }
 
 function drawYaika(ctx, x, y) {
+  if (sprites.yaika) {
+    drawSprite(ctx, sprites.yaika, x, y, 1, 72);
+    return;
+  }
   ctx.fillStyle = "#f3c7a0";
   ctx.beginPath();
   ctx.arc(x, y - 44, 11, 0, Math.PI * 2);
@@ -251,6 +270,10 @@ function drawYaika(ctx, x, y) {
 }
 
 function drawNovice(ctx, x, y) {
+  if (sprites.novice) {
+    drawSprite(ctx, sprites.novice, x, y, 1, 64);
+    return;
+  }
   ctx.fillStyle = "#f3c7a0";
   ctx.beginPath();
   ctx.arc(x, y - 44, 10, 0, Math.PI * 2);
@@ -285,6 +308,10 @@ export function drawPlayer(ctx, player, t) {
   const x = player.x + player.w / 2;
   const y = player.y + player.h;
   const bob = player.onGround && player.vx !== 0 ? Math.sin(t * 12) * 2 : 0;
+  if (sprites.player) {
+    drawSprite(ctx, sprites.player, x, y + bob, player.facing, 64);
+    return;
+  }
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(player.facing, 1);

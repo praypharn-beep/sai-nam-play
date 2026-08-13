@@ -12,7 +12,8 @@ import {
   nearestInteractable,
   zoneNameAt,
 } from "./engine.js";
-import { drawWorld, cameraX } from "./draw.js";
+import { drawWorld, cameraX, setSprites } from "./draw.js";
+import { loadSprites } from "./assets.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -319,11 +320,12 @@ function updateHud() {
   if (item) promptEl.textContent = "กด E";
 }
 
-function boot() {
+async function boot() {
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
   title.hidden = false;
   ending.hidden = true;
+  setSprites(await loadSprites());
   requestAnimationFrame(loop);
 }
 
