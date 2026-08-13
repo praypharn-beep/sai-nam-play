@@ -11,7 +11,7 @@ export const SPRITE_PATHS = {
   near: "assets/backgrounds/phu-near.png",
 };
 
-export const WALK_FPS = 6;
+export const WALK_FPS = 3;
 
 export function playerPose(player) {
   if (!player || !player.onGround) return "jump";
