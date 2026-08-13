@@ -45,6 +45,12 @@ canvas { display: block; width: 960px; height: 540px; }
   padding: 4px 12px;
   font-weight: 700;
 }
+#btn-action {
+  position: absolute;
+  right: 16px;
+  bottom: 18px;
+  z-index: 3;
+}
 .overlay {
   position: absolute;
   inset: 0;

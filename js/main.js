@@ -8,6 +8,8 @@ import {
   stepPlayer,
   buildSolids,
   fellInWater,
+  touchingGate,
+  GATE_HINTS,
   interactables,
   nearestInteractable,
   zoneNameAt,
@@ -35,12 +37,20 @@ let modalData = null;
 let lastProgress = performance.now();
 let hintArrow = false;
 let lastTs = 0;
+let lastGate = null;
 
 const input = { left: false, right: false, jump: false };
 
 window.addEventListener("keydown", (e) => {
   keys[e.code] = true;
   if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space"].includes(e.code)) e.preventDefault();
+  if (e.code === "Space" || e.code === "Enter") {
+    if (modalKind === "talk" || modalKind === "toast") {
+      e.preventDefault();
+      onInteract();
+      return;
+    }
+  }
   if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") jumpBuffered = true;
   if (e.code === "Escape") togglePause();
   if (e.code === "KeyE") onInteract();
@@ -60,6 +70,7 @@ document.getElementById("btn-resume").addEventListener("click", () => {
   pause.hidden = true;
 });
 document.getElementById("btn-quit").addEventListener("click", showTitle);
+document.getElementById("btn-action").addEventListener("click", onInteract);
 
 function startGame() {
   state = resetState();
@@ -70,6 +81,9 @@ function startGame() {
   ending.hidden = true;
   pause.hidden = true;
   lastProgress = performance.now();
+  lastGate = null;
+  applyEvent(state, { type: "talk_yaika" });
+  openTalk("ยายกา", DIALOGUE.yaikaStart);
 }
 
 function showTitle() {
@@ -124,14 +138,16 @@ function openTalk(who, text, after = null) {
   modalKind = "talk";
   modalData = { after };
   modal.hidden = false;
-  modal.innerHTML = `<div class="box"><p class="who">${esc(who)}</p><p>${esc(text)}</p><p class="hint">กด E เพื่อต่อ</p></div>`;
+  modal.innerHTML = `<div class="box"><p class="who">${esc(who)}</p><p>${esc(text)}</p><button type="button" id="btn-next">ต่อไป</button></div>`;
+  document.getElementById("btn-next").addEventListener("click", onInteract);
 }
 
 function openToast(text) {
   modalKind = "toast";
   modalData = {};
   modal.hidden = false;
-  modal.innerHTML = `<div class="box"><p>${esc(text)}</p><p class="hint">กด E เพื่อต่อ</p></div>`;
+  modal.innerHTML = `<div class="box"><p>${esc(text)}</p><button type="button" id="btn-next">ต่อไป</button></div>`;
+  document.getElementById("btn-next").addEventListener("click", onInteract);
 }
 
 function openQuestion(id) {
@@ -291,6 +307,13 @@ function loop(ts) {
       player.vx = 0;
       player.vy = 0;
       player.onGround = true;
+    }
+    const gate = touchingGate(player, solids);
+    if (gate && lastGate !== gate.gate) {
+      lastGate = gate.gate;
+      openToast(GATE_HINTS[gate.gate] || "ยังไปต่อไม่ได้");
+    } else if (!gate) {
+      lastGate = null;
     }
     if (performance.now() - lastProgress > 45000) hintArrow = true;
   }

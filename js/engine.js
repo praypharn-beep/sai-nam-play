@@ -10,7 +10,7 @@ export const JUMP_V = -420;
 export const GRAVITY = 1200;
 
 export const CHECKPOINTS = {
-  homestay: { x: 90, y: GROUND_TOP - PLAYER_H },
+  homestay: { x: 430, y: GROUND_TOP - PLAYER_H },
   garden: { x: 1020, y: GROUND_TOP - PLAYER_H },
   temple: { x: 1980, y: GROUND_TOP - PLAYER_H },
   stream: { x: 2920, y: GROUND_TOP - PLAYER_H },
@@ -132,6 +132,17 @@ function resolve(player, solids, axis) {
   }
 }
 
+export function touchingGate(player, solids) {
+  return solids.find((s) => s.gate && aabb(player, s)) || null;
+}
+
+export const GATE_HINTS = {
+  garden: "เดินกลับไปคุยยายกา แล้วกด E หรือปุ่มพูด",
+  temple: "ตอบคำถามที่ป้ายสวนให้ถูกก่อน",
+  stream: "คุยสามเณรที่วัดให้ครบ แล้วรับกล้าไม้ก่อน",
+  mountain: "ตอบคำถามที่ห้วย แล้วเก็บขยะให้ครบ 3 ชิ้นก่อน",
+};
+
 export function fellInWater(player) {
   const body = { x: player.x + 8, y: player.y + player.h - 8, w: player.w - 16, h: 10 };
   return waterRects().some((w) => aabb(body, w));
@@ -139,7 +150,7 @@ export function fellInWater(player) {
 
 export function interactables(state) {
   const list = [
-    { id: "yaika", type: "talk", x: 240, y: GROUND_TOP - 56, w: 40, h: 56, zone: "homestay" },
+    { id: "yaika", type: "talk", x: 360, y: GROUND_TOP - 56, w: 48, h: 56, zone: "homestay" },
     { id: "q1", type: "question", question: "q1", x: 1240, y: GROUND_TOP - 70, w: 36, h: 70, zone: "garden" },
     { id: "novice", type: "question", question: "q2", x: 2260, y: GROUND_TOP - 56, w: 40, h: 56, zone: "temple" },
     { id: "q3", type: "question", question: "q3", x: 2980, y: GROUND_TOP - 70, w: 36, h: 70, zone: "stream" },
@@ -156,7 +167,7 @@ export function interactables(state) {
 
 export function nearestInteractable(player, items) {
   let best = null;
-  let bestD = 56;
+  let bestD = 88;
   const px = player.x + player.w / 2;
   const py = player.y + player.h / 2;
   for (const it of items) {

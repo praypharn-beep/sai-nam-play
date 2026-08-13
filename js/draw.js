@@ -274,7 +274,7 @@ function drawWater(ctx, state) {
 }
 
 function drawActors(ctx, state, t) {
-  drawYaika(ctx, 250, GROUND_TOP);
+  drawYaika(ctx, 380, GROUND_TOP);
   drawNovice(ctx, 2280, GROUND_TOP);
   if (!state.q3Correct || state.trashCollected < 3) {
     fish(ctx, 3400, 500, t);
