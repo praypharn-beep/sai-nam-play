@@ -43,6 +43,8 @@ let hintArrow = false;
 let lastTs = 0;
 let lastGate = null;
 let stepClock = 0;
+let camX = 0;
+const CAM_FOLLOW = 9; // กล้องตามแบบลื่น ยิ่งมากยิ่งตามไว
 
 const input = { left: false, right: false, jump: false };
 
@@ -108,6 +110,7 @@ function startGame() {
   lastProgress = performance.now();
   lastGate = null;
   stepClock = 0;
+  camX = cameraX(player);
   audio.unlock();
   applyEvent(state, { type: "talk_yaika" });
   openTalk("ยายกา", DIALOGUE.yaikaStart);
@@ -361,6 +364,7 @@ function loop(ts) {
       player.vx = 0;
       player.vy = 0;
       player.onGround = true;
+      camX = cameraX(player);
     }
     const gate = touchingGate(player, solids);
     if (gate && lastGate !== gate.gate) {
@@ -372,8 +376,9 @@ function loop(ts) {
     if (performance.now() - lastProgress > 45000) hintArrow = true;
   }
   if (scene === "play") {
-    const cam = cameraX(player);
-    drawWorld(ctx, cam, player, state, ts / 1000);
+    const camTarget = cameraX(player);
+    camX += (camTarget - camX) * Math.min(1, dt * CAM_FOLLOW);
+    drawWorld(ctx, camX, player, state, ts / 1000);
     if (hintArrow) drawArrow(ctx);
     updateHud();
   }

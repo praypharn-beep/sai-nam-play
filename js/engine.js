@@ -9,6 +9,16 @@ export const WALK_SPEED = 180;
 export const JUMP_V = -420;
 export const GRAVITY = 1200;
 
+// ลื่นขึ้น: เร่งและหน่วงแทนความเร็วกระตุกทันที
+export const GROUND_ACCEL = 1600; // px/s^2 เร่งบนพื้น
+export const AIR_ACCEL = 900; // px/s^2 คุมทิศตอนลอย
+export const FRICTION = 2200; // px/s^2 หน่วงตอนปล่อยปุ่มบนพื้น
+export const MAX_FALL = 760; // เพดานความเร็วตก กันทะลุแท่น
+// ผ่อนจังหวะกระโดดให้ไม่พลาดขอบแท่น
+export const COYOTE_TIME = 0.09; // กระโดดได้อีกนิดหลังหลุดขอบ
+export const JUMP_BUFFER = 0.12; // กดกระโดดก่อนแตะพื้นได้นิดหน่อย
+export const MAX_STEP = 6; // px ต่อ substep ให้ชนแท่นนิ่ง
+
 export const CHECKPOINTS = {
   homestay: { x: 430, y: GROUND_TOP - PLAYER_H },
   garden: { x: 1020, y: GROUND_TOP - PLAYER_H },
@@ -36,7 +46,15 @@ export function createPlayer(zone = "homestay") {
     h: PLAYER_H,
     onGround: true,
     facing: 1,
+    coyote: 0,
+    jumpBuf: 0,
   };
+}
+
+function approach(cur, target, delta) {
+  if (cur < target) return Math.min(cur + delta, target);
+  if (cur > target) return Math.max(cur - delta, target);
+  return target;
 }
 
 export function aabb(a, b) {
@@ -89,27 +107,46 @@ export function waterRects() {
 
 export function stepPlayer(player, input, solids, dt) {
   const t = Math.min(dt, 1 / 30);
-  if (input.left) {
-    player.vx = -WALK_SPEED;
-    player.facing = -1;
-  } else if (input.right) {
-    player.vx = WALK_SPEED;
-    player.facing = 1;
-  } else {
-    player.vx = 0;
-  }
+  if (player.coyote === undefined) player.coyote = 0;
+  if (player.jumpBuf === undefined) player.jumpBuf = 0;
 
-  if (input.jump && player.onGround) {
+  // แนวนอน: เร่งเข้าหาความเร็วเป้าหมาย ปล่อยแล้วหน่วงลง
+  const target = input.left ? -WALK_SPEED : input.right ? WALK_SPEED : 0;
+  let accel;
+  if (target !== 0) accel = player.onGround ? GROUND_ACCEL : AIR_ACCEL;
+  else accel = player.onGround ? FRICTION : AIR_ACCEL;
+  player.vx = approach(player.vx, target, accel * t);
+  if (input.left) player.facing = -1;
+  else if (input.right) player.facing = 1;
+
+  // coyote: เติมเต็มขณะอยู่พื้น นับถอยหลังตอนลอย
+  if (player.onGround) player.coyote = COYOTE_TIME;
+  else player.coyote = Math.max(0, player.coyote - t);
+
+  // jump buffer: ตั้งตอนกด นับถอยหลัง แล้วยิงเมื่อยังมี coyote
+  if (input.jump) player.jumpBuf = JUMP_BUFFER;
+  else player.jumpBuf = Math.max(0, player.jumpBuf - t);
+  if (player.jumpBuf > 0 && player.coyote > 0) {
     player.vy = JUMP_V;
     player.onGround = false;
+    player.coyote = 0;
+    player.jumpBuf = 0;
   }
 
   player.vy += GRAVITY * t;
-  player.x += player.vx * t;
-  resolve(player, solids, "x");
-  player.y += player.vy * t;
+  if (player.vy > MAX_FALL) player.vy = MAX_FALL;
+
+  // ขยับทีละ substep เล็ก ๆ ให้ชนแท่นนิ่ง ไม่จม ไม่ทะลุ
+  const span = Math.max(Math.abs(player.vx), Math.abs(player.vy)) * t;
+  const steps = Math.max(1, Math.ceil(span / MAX_STEP));
+  const subT = t / steps;
   player.onGround = false;
-  resolve(player, solids, "y");
+  for (let i = 0; i < steps; i++) {
+    player.x += player.vx * subT;
+    resolve(player, solids, "x");
+    player.y += player.vy * subT;
+    resolve(player, solids, "y");
+  }
 }
 
 function resolve(player, solids, axis) {

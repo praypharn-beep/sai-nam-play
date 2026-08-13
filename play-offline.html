@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>สายน้ำจากภูผีปอบ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #16324f;
+  color: #1d2430;
+  font-family: "Sarabun", "TH Sarabun New", Tahoma, sans-serif;
+}
+#wrap {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#stage {
+  position: relative;
+  width: 960px;
+  height: 540px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #5ec8f0;
+}
+canvas { display: block; width: 960px; height: 540px; }
+#hud {
+  position: absolute;
+  inset: 10px 12px auto 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #fff;
+  text-shadow: 0 1px 2px #16324f;
+  font-size: 18px;
+  pointer-events: none;
+}
+#prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%);
+  background: #fff8e7;
+  border: 3px solid #3a2a18;
+  border-radius: 10px;
+  padding: 4px 12px;
+  font-weight: 700;
+}
+#btn-action {
+  position: absolute;
+  right: 16px;
+  bottom: 18px;
+  z-index: 3;
+}
+#btn-mute {
+  position: absolute;
+  left: 16px;
+  bottom: 18px;
+  z-index: 3;
+  width: 46px;
+  padding: 6px 0;
+  text-align: center;
+  line-height: 1;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 36, 56, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.overlay[hidden], #prompt[hidden] { display: none; }
+.panel, .box {
+  background: #fff8e7;
+  border: 4px solid #3a2a18;
+  border-radius: 16px;
+  padding: 22px 26px;
+  max-width: 640px;
+  width: 100%;
+}
+h1 { margin: 0 0 8px; font-size: 40px; color: #1f3a73; }
+.sub { margin: 0 0 18px; font-size: 18px; }
+.who { font-weight: 700; color: #c45c3e; margin-bottom: 6px; }
+.choices { display: grid; gap: 8px; margin-top: 12px; }
+button {
+  font: inherit;
+  font-size: 18px;
+  border: 3px solid #3a2a18;
+  border-radius: 10px;
+  background: #ffe08a;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+button:hover { background: #ffd45c; }
+.row { display: flex; gap: 10px; }
+.hint { color: #4a5a2a; font-size: 16px; }
+.feedback { min-height: 1.2em; color: #a33; font-weight: 700; }
+.stars { font-size: 36px; color: #e0a800; letter-spacing: 6px; margin: 8px 0 12px; }
+ol { padding-left: 22px; }
+
+</style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="stage">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div id="hud">
+        <span id="hud-zone">โฮมสเตย์ยายกา</span>
+        <span id="hud-items">กล้าไม้ 0/3 · ขยะ 0/3 · ต้นที่ปลูก 0/3</span>
+      </div>
+      <div id="prompt" hidden>กด E หรือปุ่มพูด</div>
+      <button type="button" id="btn-mute" aria-label="เปิดเพลง">เพลง: ปิด</button>
+      <button type="button" id="btn-action">พูด / เก็บ / ปลูก</button>
+      <div id="modal" class="overlay" hidden></div>
+      <div id="title" class="overlay">
+        <div class="panel">
+          <h1>สายน้ำจากภูผีปอบ</h1>
+          <p class="sub">เกมวิทยาศาสตร์สิ่งแวดล้อม · โรงเรียนบ้านวังน้ำมอก</p>
+          <p>เดิน สำรวจ กระโดดตามสายน้ำ จากโฮมสเตย์ยายกาไปภูผีปอบ</p>
+          <p class="hint">ลูกศรหรือ A D เดิน · ขึ้นหรือ Space กระโดด · E พูด เก็บ ปลูก</p>
+          <div class="row">
+            <button id="btn-start">เริ่มเล่น</button>
+          </div>
+        </div>
+      </div>
+      <div id="ending" class="overlay" hidden>
+        <div class="panel">
+          <h1>จบด่านแรก</h1>
+          <div id="end-stars" class="stars"></div>
+          <ol id="end-lines"></ol>
+          <div class="row">
+            <button id="btn-again">เล่นอีกครั้ง</button>
+            <button id="btn-home">กลับหน้าชื่อเกม</button>
+          </div>
+        </div>
+      </div>
+      <div id="pause" class="overlay" hidden>
+        <div class="panel">
+          <h1>พัก</h1>
+          <div class="row">
+            <button id="btn-resume">ทำต่อ</button>
+            <button id="btn-quit">กลับหน้าชื่อเกม</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+(() => {
+"use strict";
+// ===== js/content.js =====
+const DIALOGUE = {
+  yaikaStart:
+    "แขกมาพักหลายหลัง แต่น้ำในหมู่บ้านน้อย ผักในครัวยายเหี่ยว ไปตามสายน้ำทีว่าน้ำหายไปไหน",
+  noviceGive:
+    "เอาไปปลูกบนภูผีปอบเลย ป่าบนภูคือหม้อน้ำของลำห้วย",
+  yaikaEnd1:
+    "อ๋อ น้ำมาจากฝนบนภูผีปอบ ป่าอุ้มไว้ แล้วค่อยลงห้วย ยายกับสวนถึงมีน้ำใช้",
+  yaikaEnd2:
+    "ปลูกครบ 3 ต้นแล้วนี่นา ป่าบนภูจะอุ้มน้ำไว้ให้ยายกับแขกได้อาบ ได้ทำครัว จำไว้นะหลาน",
+};
+
+const QUESTIONS = {
+  q1: {
+    zone: "garden",
+    text: "ผักเหี่ยวเพราะอะไร",
+    choices: {
+      ก: "ไม่มีปุ๋ยหอม",
+      ข: "ต้นไม้ต้องการน้ำ แสง และอากาศ",
+      ค: "กระรอกสีขาวเกาะใบมากไป",
+    },
+    correct: "ข",
+    hint: "ต้นไม้ก็เหมือนคน ขาดน้ำแล้วเหี่ยว",
+  },
+  q2: {
+    zone: "temple",
+    text: "ทำไมคนบ้านเราปลูกต้นไม้บนภูผีปอบ",
+    choices: {
+      ก: "ให้ภูเขาดูสวยขึ้นอย่างเดียว",
+      ข: "ต้นไม้ช่วยอุ้มน้ำฝน แล้วค่อยปล่อยลงห้วย",
+      ค: "กันกระรอกไม่ให้เข้าวัด",
+    },
+    correct: "ข",
+    hint: "ต้นไม้บนภูช่วยอุ้มน้ำฝนไว้",
+  },
+  q3: {
+    zone: "stream",
+    text: "ถ้าขยะจากโฮมสเตย์ลงห้วย จะเกิดอะไร",
+    choices: {
+      ก: "น้ำสกปรก สัตว์น้ำอยู่ยาก สวนกับครัวได้น้ำไม่ดี",
+      ข: "ขยะจะกลายเป็นปุ๋ยทันที",
+      ค: "น้ำจะสะอาดขึ้นเพราะขยะจม",
+    },
+    correct: "ก",
+    hint: "ขยะไม่ใช่อาหารปลา",
+  },
+};
+
+const WATER_ORDER = ["rain", "forest", "stream", "home"];
+
+const WATER_LABELS = {
+  rain: "ฝนตกบนภูผีปอบ",
+  forest: "ป่าอุ้มน้ำไว้",
+  stream: "น้ำไหลลงลำห้วยวังน้ำมอก",
+  home: "สวนกับโฮมสเตย์ยายกาได้น้ำ",
+};
+
+const ENDING_LINES = [
+  "ต้นไม้ต้องการน้ำ แสง และอากาศ",
+  "ขยะลงห้วยทำให้น้ำเสีย แล้วคนกับสวนได้น้ำไม่ดี",
+  "ป่าบนภูผีปอบคือหม้อน้ำของบ้านวังน้ำมอก",
+];
+
+const ZONE_NAMES = {
+  homestay: "โฮมสเตย์ยายกา",
+  garden: "สวนโรงเรียน",
+  temple: "วัดป่าภูผีปอบ",
+  stream: "ริมลำห้วยวังน้ำมอก",
+  mountain: "ภูผีปอบ",
+};
+
+// ===== js/state.js =====
+const TRASH_IDS = ["bag", "bottle", "foam"];
+
+function createState() {
+  return {
+    talkedYaika: false,
+    q1Correct: false,
+    q1UsedHint: false,
+    q2Correct: false,
+    q2UsedHint: false,
+    q3Correct: false,
+    q3UsedHint: false,
+    saplings: 0,
+    trashCollected: 0,
+    trash: { bag: false, bottle: false, foam: false },
+    treesPlanted: 0,
+    planted: { 1: false, 2: false, 3: false },
+    waterSorted: false,
+  };
+}
+
+function resetState() {
+  return createState();
+}
+
+function canEnter(state, zone) {
+  if (zone === "homestay") return true;
+  if (zone === "garden") return state.talkedYaika;
+  if (zone === "temple") return state.q1Correct;
+  if (zone === "stream") return state.q2Correct;
+  if (zone === "mountain") return state.q3Correct && state.trashCollected === 3;
+  if (zone === "ending") return state.treesPlanted === 3 && state.waterSorted;
+  return false;
+}
+
+function unusedHintCount(state) {
+  let n = 0;
+  if (state.q1Correct && !state.q1UsedHint) n += 1;
+  if (state.q2Correct && !state.q2UsedHint) n += 1;
+  if (state.q3Correct && !state.q3UsedHint) n += 1;
+  return n;
+}
+
+function starCount(state) {
+  if (!state.waterSorted) return 0;
+  const unused = unusedHintCount(state);
+  if (unused === 3) return 3;
+  if (unused >= 2) return 2;
+  return 1;
+}
+
+function applyEvent(state, event) {
+  if (!event || !event.type) return { ok: false, reason: "no-event" };
+
+  if (event.type === "talk_yaika") {
+    state.talkedYaika = true;
+    return { ok: true };
+  }
+
+  if (event.type === "hint") {
+    const key = hintFlag(event.question);
+    if (!key) return { ok: false, reason: "bad-question" };
+    if (state[correctFlag(event.question)]) return { ok: false, reason: "already-correct" };
+    if (state[key]) return { ok: false, reason: "hint-used" };
+    state[key] = true;
+    return { ok: true, hint: QUESTIONS[event.question].hint };
+  }
+
+  if (event.type === "answer") {
+    const q = QUESTIONS[event.question];
+    if (!q) return { ok: false, reason: "bad-question" };
+    const flag = correctFlag(event.question);
+    if (state[flag]) return { ok: true, already: true };
+    const ok = event.choice === q.correct;
+    if (ok) {
+      state[flag] = true;
+      if (event.question === "q2") state.saplings = 3;
+    }
+    return { ok, correct: ok };
+  }
+
+  if (event.type === "pickup_trash") {
+    if (!state.q3Correct) return { ok: false, reason: "need-q3" };
+    if (!TRASH_IDS.includes(event.id)) return { ok: false, reason: "bad-trash" };
+    if (state.trash[event.id]) return { ok: false, reason: "already" };
+    state.trash[event.id] = true;
+    state.trashCollected += 1;
+    return { ok: true };
+  }
+
+  if (event.type === "plant") {
+    if (event.zone !== "mountain") return { ok: false, reason: "wrong-zone" };
+    if (state.saplings <= 0) return { ok: false, reason: "no-sapling" };
+    const hole = Number(event.hole);
+    if (![1, 2, 3].includes(hole)) return { ok: false, reason: "bad-hole" };
+    if (state.planted[hole]) return { ok: false, reason: "already" };
+    state.planted[hole] = true;
+    state.saplings -= 1;
+    state.treesPlanted += 1;
+    return { ok: true };
+  }
+
+  if (event.type === "sort_water") {
+    if (state.treesPlanted < 3) return { ok: false, reason: "need-trees" };
+    const order = event.order || [];
+    const ok =
+      order.length === WATER_ORDER.length &&
+      order.every((id, i) => id === WATER_ORDER[i]);
+    if (ok) state.waterSorted = true;
+    return { ok };
+  }
+
+  return { ok: false, reason: "unknown" };
+}
+
+function correctFlag(question) {
+  if (question === "q1") return "q1Correct";
+  if (question === "q2") return "q2Correct";
+  if (question === "q3") return "q3Correct";
+  return null;
+}
+
+function hintFlag(question) {
+  if (question === "q1") return "q1UsedHint";
+  if (question === "q2") return "q2UsedHint";
+  if (question === "q3") return "q3UsedHint";
+  return null;
+}
+
+// ===== js/assets.js =====
+const SPRITE_PATHS = {
+  player: "assets/characters/nong-mok.png",
+  playerIdle: "assets/characters/nong-mok-idle.png",
+  playerJump: "assets/characters/nong-mok-jump.png",
+  playerWalkRight: "assets/characters/nong-mok-walk-right.png",
+  playerWalkLeft: "assets/characters/nong-mok-walk-left.png",
+  yaika: "assets/characters/yaika.png",
+  novice: "assets/characters/novice.png",
+  far: "assets/backgrounds/phu-far.png",
+  mid: "assets/backgrounds/phu-mid.png",
+  near: "assets/backgrounds/phu-near.png",
+  tileGround: "assets/tiles/ground-grass.png",
+  tilePlatform: "assets/tiles/platform.png",
+  tileTree: "assets/tiles/tree.png",
+  tileGrass: "assets/tiles/grass.png",
+  tileRock: "assets/tiles/rock.png",
+  tileFence: "assets/tiles/fence.png",
+};
+
+const WALK_FPS = 3;
+
+function playerPose(player) {
+  if (!player || !player.onGround) return "jump";
+  if (Math.abs(player.vx || 0) > 0) return "walk";
+  return "idle";
+}
+
+function walkFrameIndex(time, frameCount) {
+  const n = Math.max(1, frameCount | 0);
+  const t = Number.isFinite(time) ? Math.max(0, time) : 0;
+  return Math.floor(t * WALK_FPS) % n;
+}
+
+function walkFrames(sprites) {
+  if (!sprites) return [];
+  return [sprites.playerWalkRight, sprites.playerWalkLeft].filter(Boolean);
+}
+
+function pickPlayerSprite(sprites, player, time = 0) {
+  if (!sprites) return null;
+  const pose = playerPose(player);
+  if (pose === "jump") return sprites.playerJump || sprites.player || null;
+  if (pose === "idle") return sprites.playerIdle || sprites.player || null;
+  const frames = walkFrames(sprites);
+  if (!frames.length) return sprites.player || null;
+  return frames[walkFrameIndex(time, frames.length)];
+}
+
+async function loadSprites() {
+  const sprites = {};
+  await Promise.all(
+    Object.entries(SPRITE_PATHS).map(async ([key, path]) => {
+      sprites[key] = await tryLoad(path);
+    }),
+  );
+  return sprites;
+}
+
+function tryLoad(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+// ===== js/engine.js =====
+const CANVAS_W = 960;
+const CANVAS_H = 540;
+const ZONE_W = 960;
+const ZONES = ["homestay", "garden", "temple", "stream", "mountain"];
+const GROUND_TOP = 430;
+const PLAYER_W = 36;
+const PLAYER_H = 48;
+const WALK_SPEED = 180;
+const JUMP_V = -420;
+const GRAVITY = 1200;
+
+// ลื่นขึ้น: เร่งและหน่วงแทนความเร็วกระตุกทันที
+const GROUND_ACCEL = 1600; // px/s^2 เร่งบนพื้น
+const AIR_ACCEL = 900; // px/s^2 คุมทิศตอนลอย
+const FRICTION = 2200; // px/s^2 หน่วงตอนปล่อยปุ่มบนพื้น
+const MAX_FALL = 760; // เพดานความเร็วตก กันทะลุแท่น
+// ผ่อนจังหวะกระโดดให้ไม่พลาดขอบแท่น
+const COYOTE_TIME = 0.09; // กระโดดได้อีกนิดหลังหลุดขอบ
+const JUMP_BUFFER = 0.12; // กดกระโดดก่อนแตะพื้นได้นิดหน่อย
+const MAX_STEP = 6; // px ต่อ substep ให้ชนแท่นนิ่ง
+
+const CHECKPOINTS = {
+  homestay: { x: 430, y: GROUND_TOP - PLAYER_H },
+  garden: { x: 1020, y: GROUND_TOP - PLAYER_H },
+  temple: { x: 1980, y: GROUND_TOP - PLAYER_H },
+  stream: { x: 2920, y: GROUND_TOP - PLAYER_H },
+  mountain: { x: 3900, y: GROUND_TOP - PLAYER_H },
+};
+
+function zoneIndexAt(x) {
+  return Math.max(0, Math.min(ZONES.length - 1, Math.floor(x / ZONE_W)));
+}
+
+function zoneNameAt(x) {
+  return ZONES[zoneIndexAt(x)];
+}
+
+function createPlayer(zone = "homestay") {
+  const spawn = CHECKPOINTS[zone];
+  return {
+    x: spawn.x,
+    y: spawn.y,
+    vx: 0,
+    vy: 0,
+    w: PLAYER_W,
+    h: PLAYER_H,
+    onGround: true,
+    facing: 1,
+    coyote: 0,
+    jumpBuf: 0,
+  };
+}
+
+function approach(cur, target, delta) {
+  if (cur < target) return Math.min(cur + delta, target);
+  if (cur > target) return Math.max(cur - delta, target);
+  return target;
+}
+
+function aabb(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function buildSolids(canEnterNext) {
+  const solids = [];
+  const thick = 200;
+
+  solids.push({ x: -80, y: 0, w: 80, h: CANVAS_H });
+  solids.push({ x: ZONE_W * 5, y: 0, w: 80, h: CANVAS_H });
+
+  // Homestay, garden, temple: full ground
+  for (const i of [0, 1, 2]) {
+    solids.push({ x: i * ZONE_W, y: GROUND_TOP, w: ZONE_W, h: thick });
+  }
+
+  // Stream: banks + stepping stones
+  solids.push({ x: 2880, y: GROUND_TOP, w: 200, h: thick });
+  solids.push({ x: 3660, y: GROUND_TOP, w: 180, h: thick });
+  solids.push({ x: 3160, y: 390, w: 90, h: 24 });
+  solids.push({ x: 3320, y: 350, w: 90, h: 24 });
+  solids.push({ x: 3480, y: 390, w: 90, h: 24 });
+
+  // Mountain terraces
+  solids.push({ x: 3840, y: GROUND_TOP, w: 200, h: thick });
+  solids.push({ x: 4040, y: 370, w: 140, h: 24 });
+  solids.push({ x: 4220, y: 310, w: 140, h: 24 });
+  solids.push({ x: 4400, y: 250, w: 220, h: 24 });
+  solids.push({ x: 4620, y: GROUND_TOP, w: 180, h: thick });
+
+  const gates = [
+    { x: 930, next: "garden" },
+    { x: 1890, next: "temple" },
+    { x: 2850, next: "stream" },
+    { x: 3810, next: "mountain" },
+  ];
+  for (const g of gates) {
+    if (!canEnterNext(g.next)) {
+      solids.push({ x: g.x, y: 0, w: 28, h: GROUND_TOP, gate: g.next });
+    }
+  }
+  return solids;
+}
+
+function waterRects() {
+  return [{ x: 3080, y: 450, w: 580, h: 90 }];
+}
+
+function stepPlayer(player, input, solids, dt) {
+  const t = Math.min(dt, 1 / 30);
+  if (player.coyote === undefined) player.coyote = 0;
+  if (player.jumpBuf === undefined) player.jumpBuf = 0;
+
+  // แนวนอน: เร่งเข้าหาความเร็วเป้าหมาย ปล่อยแล้วหน่วงลง
+  const target = input.left ? -WALK_SPEED : input.right ? WALK_SPEED : 0;
+  let accel;
+  if (target !== 0) accel = player.onGround ? GROUND_ACCEL : AIR_ACCEL;
+  else accel = player.onGround ? FRICTION : AIR_ACCEL;
+  player.vx = approach(player.vx, target, accel * t);
+  if (input.left) player.facing = -1;
+  else if (input.right) player.facing = 1;
+
+  // coyote: เติมเต็มขณะอยู่พื้น นับถอยหลังตอนลอย
+  if (player.onGround) player.coyote = COYOTE_TIME;
+  else player.coyote = Math.max(0, player.coyote - t);
+
+  // jump buffer: ตั้งตอนกด นับถอยหลัง แล้วยิงเมื่อยังมี coyote
+  if (input.jump) player.jumpBuf = JUMP_BUFFER;
+  else player.jumpBuf = Math.max(0, player.jumpBuf - t);
+  if (player.jumpBuf > 0 && player.coyote > 0) {
+    player.vy = JUMP_V;
+    player.onGround = false;
+    player.coyote = 0;
+    player.jumpBuf = 0;
+  }
+
+  player.vy += GRAVITY * t;
+  if (player.vy > MAX_FALL) player.vy = MAX_FALL;
+
+  // ขยับทีละ substep เล็ก ๆ ให้ชนแท่นนิ่ง ไม่จม ไม่ทะลุ
+  const span = Math.max(Math.abs(player.vx), Math.abs(player.vy)) * t;
+  const steps = Math.max(1, Math.ceil(span / MAX_STEP));
+  const subT = t / steps;
+  player.onGround = false;
+  for (let i = 0; i < steps; i++) {
+    player.x += player.vx * subT;
+    resolve(player, solids, "x");
+    player.y += player.vy * subT;
+    resolve(player, solids, "y");
+  }
+}
+
+function resolve(player, solids, axis) {
+  for (const s of solids) {
+    if (!aabb(player, s)) continue;
+    if (axis === "x") {
+      if (player.vx > 0) player.x = s.x - player.w;
+      else if (player.vx < 0) player.x = s.x + s.w;
+      player.vx = 0;
+    } else {
+      if (player.vy > 0) {
+        player.y = s.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      } else if (player.vy < 0) {
+        player.y = s.y + s.h;
+        player.vy = 0;
+      }
+    }
+  }
+}
+
+function touchingGate(player, solids) {
+  return solids.find((s) => s.gate && aabb(player, s)) || null;
+}
+
+const GATE_HINTS = {
+  garden: "เดินกลับไปคุยยายกา แล้วกด E หรือปุ่มพูด",
+  temple: "ตอบคำถามที่ป้ายสวนให้ถูกก่อน",
+  stream: "คุยสามเณรที่วัดให้ครบ แล้วรับกล้าไม้ก่อน",
+  mountain: "ตอบคำถามที่ห้วย แล้วเก็บขยะให้ครบ 3 ชิ้นก่อน",
+};
+
+function fellInWater(player) {
+  const body = { x: player.x + 8, y: player.y + player.h - 8, w: player.w - 16, h: 10 };
+  return waterRects().some((w) => aabb(body, w));
+}
+
+function interactables(state) {
+  const list = [
+    { id: "yaika", type: "talk", x: 360, y: GROUND_TOP - 56, w: 48, h: 56, zone: "homestay" },
+    { id: "q1", type: "question", question: "q1", x: 1240, y: GROUND_TOP - 70, w: 36, h: 70, zone: "garden" },
+    { id: "novice", type: "question", question: "q2", x: 2260, y: GROUND_TOP - 56, w: 40, h: 56, zone: "temple" },
+    { id: "q3", type: "question", question: "q3", x: 2980, y: GROUND_TOP - 70, w: 36, h: 70, zone: "stream" },
+  ];
+  if (state.treesPlanted >= 3) {
+    list.push({ id: "sort", type: "sort", x: 4700, y: GROUND_TOP - 70, w: 36, h: 70, zone: "mountain" });
+  }
+  if (!state.trash.bag) list.push({ id: "bag", type: "trash", x: 3185, y: 390 - 22, w: 24, h: 22, zone: "stream" });
+  if (!state.trash.bottle) list.push({ id: "bottle", type: "trash", x: 3345, y: 350 - 22, w: 18, h: 22, zone: "stream" });
+  if (!state.trash.foam) list.push({ id: "foam", type: "trash", x: 3505, y: 390 - 22, w: 24, h: 18, zone: "stream" });
+  if (!state.planted[1]) list.push({ id: 1, type: "hole", hole: 1, x: 4080, y: 370 - 16, w: 40, h: 24, zone: "mountain" });
+  if (!state.planted[2]) list.push({ id: 2, type: "hole", hole: 2, x: 4260, y: 310 - 16, w: 40, h: 24, zone: "mountain" });
+  if (!state.planted[3]) list.push({ id: 3, type: "hole", hole: 3, x: 4440, y: 250 - 16, w: 48, h: 28, zone: "mountain" });
+  return list;
+}
+
+function nearestInteractable(player, items) {
+  let best = null;
+  let bestD = 88;
+  const px = player.x + player.w / 2;
+  const py = player.y + player.h / 2;
+  for (const it of items) {
+    const ix = it.x + it.w / 2;
+    const iy = it.y + it.h / 2;
+    const d = Math.hypot(px - ix, py - iy);
+    if (d < bestD) {
+      best = it;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+// ===== js/audio.js =====
+// เสียงของเกมสายน้ำจากภูผีปอบ — สังเคราะห์ทั้งหมดด้วย Web Audio API
+// ไม่มีไฟล์เสียง ไม่ต้องดาวน์โหลด เล่นได้ออฟไลน์ และไม่มีปัญหาลิขสิทธิ์
+//
+// ส่วนข้อมูล (SOUNDS, MELODY, soundDuration) เป็น pure ทดสอบใน Node ได้
+// ตัว AudioContext อยู่ใน method ของ GameAudio เท่านั้น การ import โมดูลนี้
+// จึงไม่ต้องมีเบราว์เซอร์ และเทสต์รันผ่าน node --test ได้
+
+// --- ข้อมูลเสียง ทดสอบได้ ---
+
+// เอฟเฟกต์แต่ละอย่างเป็นลิสต์ของ "เสียงย่อย" หนึ่งเสียงย่อยคือออสซิลเลเตอร์
+// หนึ่งตัวหรือเสียงซ่า (noise) หนึ่งก้อน พร้อมซองเสียงสั้น ๆ
+//   wave  = รูปคลื่น (sine/square/triangle)  ถ้าไม่ระบุใช้ sine
+//   f0    = ความถี่เริ่ม (Hz)
+//   f1    = ความถี่จบ ถ้าต่างจาก f0 จะกวาดความถี่
+//   noise = true คือเสียงซ่าแทนออสซิลเลเตอร์
+//   dur   = ความยาว (วินาที)
+//   gain  = ความดังยอด (0..1)
+//   at    = เริ่มช้าลงกี่วินาทีจากตอนสั่งเล่น ใช้ต่อโน้ตเป็นทำนองสั้น ๆ
+const SOUNDS = {
+  jump: [{ wave: "square", f0: 420, f1: 760, dur: 0.14, gain: 0.20 }],
+  land: [
+    { wave: "sine", f0: 200, f1: 90, dur: 0.10, gain: 0.22 },
+    { noise: true, dur: 0.06, gain: 0.10 },
+  ],
+  step: [{ noise: true, dur: 0.035, gain: 0.05 }],
+  talk: [{ wave: "square", f0: 380, f1: 380, dur: 0.05, gain: 0.10 }],
+  correct: [
+    { wave: "sine", f0: 523, f1: 523, dur: 0.10, gain: 0.18, at: 0.0 },
+    { wave: "sine", f0: 659, f1: 659, dur: 0.10, gain: 0.18, at: 0.10 },
+    { wave: "sine", f0: 784, f1: 784, dur: 0.16, gain: 0.18, at: 0.20 },
+  ],
+  wrong: [{ wave: "square", f0: 220, f1: 150, dur: 0.20, gain: 0.16 }],
+  pickup: [{ wave: "triangle", f0: 660, f1: 990, dur: 0.10, gain: 0.16 }],
+  plant: [
+    { wave: "sine", f0: 300, f1: 540, dur: 0.16, gain: 0.16 },
+    { noise: true, dur: 0.05, gain: 0.05, at: 0.02 },
+  ],
+  splash: [
+    { noise: true, dur: 0.26, gain: 0.16 },
+    { wave: "sine", f0: 500, f1: 200, dur: 0.20, gain: 0.08 },
+  ],
+  win: [
+    { wave: "triangle", f0: 523, f1: 523, dur: 0.12, gain: 0.18, at: 0.0 },
+    { wave: "triangle", f0: 659, f1: 659, dur: 0.12, gain: 0.18, at: 0.12 },
+    { wave: "triangle", f0: 784, f1: 784, dur: 0.12, gain: 0.18, at: 0.24 },
+    { wave: "triangle", f0: 1046, f1: 1046, dur: 0.30, gain: 0.20, at: 0.36 },
+  ],
+};
+
+const SOUND_NAMES = Object.keys(SOUNDS);
+
+// ทำนองคลอเบา ๆ สเกลเพนทาโทนิก โทนบ้านทุ่งสดใส ไม่ใช่เพลงมาริโอ
+// lead/bass เป็นความถี่ (Hz) โดย 0 คือหยุดพัก วนซ้ำหนึ่งวลี
+const MELODY = {
+  step: 0.26,
+  lead: [523, 659, 784, 659, 880, 784, 659, 0, 587, 784, 659, 587, 523, 0, 392, 0],
+  bass: [131, 0, 131, 0, 196, 0, 196, 0, 220, 0, 220, 0, 196, 0, 131, 0],
+  gain: 0.045,
+};
+
+// ความยาวรวมของเอฟเฟกต์หนึ่งชื่อ (วินาที) ชื่อที่ไม่รู้จักได้ 0
+function soundDuration(name) {
+  const voices = SOUNDS[name];
+  if (!voices) return 0;
+  return voices.reduce((max, v) => Math.max(max, (v.at || 0) + v.dur), 0);
+}
+
+// --- เอนจินเสียงจริง ใช้ในเบราว์เซอร์ ---
+
+function createGameAudio() {
+  return new GameAudio();
+}
+
+class GameAudio {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+    this.muted = false;
+    this._noiseBuf = null;
+    this._musicOn = false;
+    this._timer = null;
+    this._nextNote = 0;
+    this._noteIdx = 0;
+  }
+
+  // ต้องเรียกจาก user gesture (คลิก/กดปุ่ม) เพื่อผ่านกฎ autoplay ของเบราว์เซอร์
+  unlock() {
+    if (this.ctx) {
+      if (this.ctx.state === "suspended") this.ctx.resume();
+      return;
+    }
+    const AC =
+      typeof window !== "undefined" &&
+      (window.AudioContext || window.webkitAudioContext);
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.muted ? 0 : 0.9;
+    this.master.connect(this.ctx.destination);
+  }
+
+  setMuted(m) {
+    this.muted = !!m;
+    if (this.master) this.master.gain.value = this.muted ? 0 : 0.9;
+    return this.muted;
+  }
+
+  toggleMute() {
+    return this.setMuted(!this.muted);
+  }
+
+  play(name) {
+    if (!this.ctx || this.muted) return;
+    const voices = SOUNDS[name];
+    if (!voices) return;
+    const now = this.ctx.currentTime;
+    for (const v of voices) this._voice(v, now + (v.at || 0));
+  }
+
+  _voice(v, t) {
+    const g = this.ctx.createGain();
+    g.connect(this.master);
+    const peak = Math.max(0.0002, v.gain || 0.15);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + v.dur);
+
+    let src;
+    if (v.noise) {
+      src = this.ctx.createBufferSource();
+      src.buffer = this._noise();
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 1800;
+      src.connect(lp);
+      lp.connect(g);
+    } else {
+      src = this.ctx.createOscillator();
+      src.type = v.wave || "sine";
+      src.frequency.setValueAtTime(v.f0, t);
+      if (v.f1 && v.f1 !== v.f0) {
+        src.frequency.exponentialRampToValueAtTime(Math.max(1, v.f1), t + v.dur);
+      }
+      src.connect(g);
+    }
+    src.start(t);
+    src.stop(t + v.dur + 0.02);
+  }
+
+  _noise() {
+    if (this._noiseBuf) return this._noiseBuf;
+    const len = Math.floor(this.ctx.sampleRate * 0.3);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    this._noiseBuf = buf;
+    return buf;
+  }
+
+  startMusic() {
+    if (!this.ctx || this._musicOn) return;
+    this._musicOn = true;
+    this._noteIdx = 0;
+    this._nextNote = this.ctx.currentTime + 0.12;
+    this._timer = setInterval(() => this._schedule(), 25);
+  }
+
+  stopMusic() {
+    this._musicOn = false;
+    if (this._timer) {
+      clearInterval(this._timer);
+      this._timer = null;
+    }
+  }
+
+  _schedule() {
+    if (!this.ctx || !this._musicOn) return;
+    const ahead = this.ctx.currentTime + 0.12;
+    const n = MELODY.lead.length;
+    while (this._nextNote < ahead) {
+      const i = this._noteIdx % n;
+      const lead = MELODY.lead[i];
+      const bass = MELODY.bass[i];
+      if (lead) {
+        this._voice(
+          { wave: "triangle", f0: lead, f1: lead, dur: MELODY.step * 0.9, gain: MELODY.gain },
+          this._nextNote,
+        );
+      }
+      if (bass) {
+        this._voice(
+          { wave: "sine", f0: bass, f1: bass, dur: MELODY.step * 0.95, gain: MELODY.gain },
+          this._nextNote,
+        );
+      }
+      this._nextNote += MELODY.step;
+      this._noteIdx++;
+    }
+  }
+}
+
+// ===== js/draw.js =====
+let sprites = {
+  player: null,
+  playerIdle: null,
+  playerJump: null,
+  playerWalk2: null,
+  playerWalk3: null,
+  yaika: null,
+  novice: null,
+  far: null,
+  mid: null,
+  near: null,
+};
+
+function setSprites(next) {
+  sprites = next || sprites;
+}
+
+function drawSprite(ctx, img, x, y, facing = 1, height = 64) {
+  const w = (img.width / img.height) * height;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(facing, 1);
+  ctx.drawImage(img, -w / 2, -height, w, height);
+  ctx.restore();
+}
+
+function drawWorld(ctx, camX, player, state, t) {
+  ctx.save();
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+  if (sprites.far) {
+    drawFarImage(ctx, camX);
+  } else {
+    drawSky(ctx);
+    drawFar(ctx, camX);
+  }
+  drawMid(ctx, camX);
+  ctx.translate(-camX, 0);
+  drawZones(ctx, state, t);
+  drawWater(ctx, state);
+  drawActors(ctx, state, t);
+  drawPlayer(ctx, player, t);
+  ctx.restore();
+  drawNear(ctx, camX);
+}
+
+function drawSky(ctx) {
+  const g = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+  g.addColorStop(0, "#5ec8f0");
+  g.addColorStop(0.55, "#b8ecff");
+  g.addColorStop(1, "#8fd36a");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+}
+
+function drawFarImage(ctx, camX) {
+  const img = sprites.far;
+  const extra = 120;
+  const shift = (camX / (ZONE_W * 4)) * extra;
+  ctx.drawImage(img, -shift, 0, CANVAS_W + extra, CANVAS_H);
+}
+
+function drawFar(ctx, camX) {
+  const x = -((camX * 0.15) % 400);
+  ctx.fillStyle = "#6b8f4a";
+  ctx.beginPath();
+  ctx.moveTo(0, 280);
+  for (let i = 0; i < 8; i++) {
+    const px = x + i * 220;
+    ctx.lineTo(px + 80, 170);
+    ctx.lineTo(px + 160, 250);
+  }
+  ctx.lineTo(CANVAS_W, 300);
+  ctx.lineTo(CANVAS_W, CANVAS_H);
+  ctx.lineTo(0, CANVAS_H);
+  ctx.fill();
+
+  ctx.fillStyle = "#4d6a38";
+  mountain(ctx, 620 - camX * 0.2, 210, 210, 160);
+  ctx.fillStyle = "#3f5630";
+  mountain(ctx, 700 - camX * 0.2, 230, 160, 140);
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(700 - camX * 0.2, 200, 70, 16, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function mountain(ctx, x, y, w, h) {
+  ctx.beginPath();
+  ctx.moveTo(x - w / 2, y + h);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + w / 2, y + h);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawMid(ctx, camX) {
+  if (sprites.mid) {
+    drawMidImage(ctx, camX);
+    return;
+  }
+  const shift = -(camX * 0.4);
+  if (sprites.far) {
+    for (let i = 0; i < 8; i++) {
+      tree(ctx, shift + 140 + i * 260, 338, 18 + (i % 3) * 4, "rgba(45,110,55,0.45)");
+    }
+    return;
+  }
+  for (let i = 0; i < 14; i++) {
+    tree(ctx, shift + 80 + i * 170, 300, 26 + (i % 3) * 6, "#3d8f4a");
+  }
+}
+
+function drawMidImage(ctx, camX) {
+  const img = sprites.mid;
+  const targetH = 248;
+  const targetW = targetH * (img.width / img.height);
+  const y = GROUND_TOP - targetH + 20;
+  const speed = 0.42;
+  let x = -((camX * speed) % targetW);
+  if (x > 0) x -= targetW;
+  for (let px = x - targetW; px < CANVAS_W + targetW; px += targetW) {
+    ctx.drawImage(img, px, y, targetW, targetH);
+  }
+}
+
+function tree(ctx, x, y, r, color) {
+  ctx.fillStyle = "#6b4226";
+  ctx.fillRect(x - 5, y, 10, 140);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.arc(x - r * 0.7, y + 10, r * 0.75, 0, Math.PI * 2);
+  ctx.arc(x + r * 0.7, y + 10, r * 0.75, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawZones(ctx, state, t) {
+  groundStrip(ctx, 0, ZONE_W * 3, GROUND_TOP, "#6dbe45", "#c9844a");
+  groundStrip(ctx, 2880, 200, GROUND_TOP, "#6dbe45", "#c9844a");
+  groundStrip(ctx, 3660, 180, GROUND_TOP, "#8b7355", "#6a5340");
+  groundStrip(ctx, 3840, 200, GROUND_TOP, "#8b7355", "#6a5340");
+  groundStrip(ctx, 4620, 180, GROUND_TOP, "#8b7355", "#6a5340");
+
+  platform(ctx, 3160, 390, 90, "#8b7355");
+  platform(ctx, 3320, 350, 90, "#8b7355");
+  platform(ctx, 3480, 390, 90, "#8b7355");
+  platform(ctx, 4040, 370, 140, "#7a5a3a");
+  platform(ctx, 4220, 310, 140, "#7a5a3a");
+  platform(ctx, 4400, 250, 220, "#7a5a3a");
+
+  house(ctx, 70, GROUND_TOP);
+  prop(ctx, "tileFence", 520, GROUND_TOP, 110, 42);
+  veggies(ctx, 1180, GROUND_TOP, state.q1Correct);
+  prop(ctx, "tileTree", 1500, GROUND_TOP, 90, 140);
+  prop(ctx, "tileGrass", 1120, GROUND_TOP, 36, 28);
+  temple(ctx, 2080, GROUND_TOP);
+  prop(ctx, "tileRock", 3100, GROUND_TOP, 40, 30);
+  prop(ctx, "tileRock", 3720, GROUND_TOP, 48, 34);
+  prop(ctx, "tileTree", 4100, GROUND_TOP, 80, 120);
+  sign(ctx, 1240, GROUND_TOP, "สวน");
+  sign(ctx, 2980, GROUND_TOP, "ห้วย");
+  if (state.treesPlanted >= 3) sign(ctx, 4700, GROUND_TOP, "สายน้ำ");
+
+  if (state.planted[1]) sapling(ctx, 4090, 370, t);
+  if (state.planted[2]) sapling(ctx, 4270, 310, t);
+  if (state.planted[3]) sapling(ctx, 4450, 250, t);
+  if (!state.planted[1]) hole(ctx, 4080, 370);
+  if (!state.planted[2]) hole(ctx, 4260, 310);
+  if (!state.planted[3]) hole(ctx, 4440, 250);
+}
+
+function groundStrip(ctx, x, w, y, top, soil) {
+  ctx.fillStyle = soil;
+  ctx.fillRect(x, y, w, 200);
+  if (sprites.tileGround) {
+    const img = sprites.tileGround;
+    const tileW = 72;
+    const tileH = 78;
+    for (let px = x; px < x + w - 1; px += tileW) {
+      const dw = Math.min(tileW, x + w - px);
+      ctx.drawImage(img, 0, 0, img.width * (dw / tileW), img.height, px, y - 16, dw, tileH);
+    }
+    return;
+  }
+  ctx.fillStyle = top;
+  ctx.fillRect(x, y, w, 18);
+  ctx.fillStyle = "#4e9a32";
+  for (let i = 0; i < w; i += 16) {
+    ctx.fillRect(x + i, y - 4, 8, 6);
+  }
+}
+
+function platform(ctx, x, y, w, color) {
+  if (sprites.tilePlatform) {
+    ctx.drawImage(sprites.tilePlatform, x - 4, y - 18, w + 8, 44);
+    return;
+  }
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, 22);
+  ctx.fillStyle = "#6dbe45";
+  ctx.fillRect(x, y, w, 8);
+}
+
+function prop(ctx, key, x, y, w, h) {
+  const img = sprites[key];
+  if (!img) return;
+  ctx.drawImage(img, x - w / 2, y - h, w, h);
+}
+
+function house(ctx, x, y) {
+  ctx.fillStyle = "#f3d7a4";
+  ctx.fillRect(x, y - 110, 150, 110);
+  ctx.fillStyle = "#c45c3e";
+  ctx.beginPath();
+  ctx.moveTo(x - 12, y - 110);
+  ctx.lineTo(x + 75, y - 168);
+  ctx.lineTo(x + 162, y - 110);
+  ctx.fill();
+  ctx.fillStyle = "#6b3f2a";
+  ctx.fillRect(x + 18, y - 70, 28, 70);
+  ctx.fillStyle = "#7ec8e3";
+  ctx.fillRect(x + 90, y - 78, 34, 28);
+  ctx.fillStyle = "#e8c36a";
+  ctx.beginPath();
+  ctx.arc(x + 30, y - 180, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#d9d3c4";
+  ctx.fillRect(x + 160, y - 36, 22, 36);
+}
+
+function veggies(ctx, x, y, healthy) {
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = "#8b5a2b";
+    ctx.fillRect(x + i * 34, y - 8, 22, 8);
+    ctx.fillStyle = healthy ? "#3fa34d" : "#9aa35a";
+    ctx.beginPath();
+    if (healthy) {
+      ctx.ellipse(x + 11 + i * 34, y - 22, 10, 16, 0, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(x + 11 + i * 34, y - 14, 12, 8, 0.4, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+}
+
+function temple(ctx, x, y) {
+  ctx.fillStyle = "#f0e2c4";
+  ctx.fillRect(x, y - 100, 130, 100);
+  ctx.fillStyle = "#c43b2c";
+  ctx.beginPath();
+  ctx.moveTo(x - 16, y - 100);
+  ctx.lineTo(x + 65, y - 168);
+  ctx.lineTo(x + 146, y - 100);
+  ctx.fill();
+  ctx.fillStyle = "#f7e27a";
+  ctx.fillRect(x + 52, y - 70, 26, 70);
+  ctx.fillStyle = "#2f7a3e";
+  ctx.beginPath();
+  ctx.arc(x + 170, y - 70, 28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#6b4226";
+  ctx.fillRect(x + 166, y - 50, 8, 50);
+}
+
+function sign(ctx, x, y, label) {
+  ctx.fillStyle = "#6b4226";
+  ctx.fillRect(x + 14, y - 52, 6, 52);
+  ctx.fillStyle = "#f0d48a";
+  ctx.fillRect(x, y - 78, 36, 28);
+  ctx.strokeStyle = "#6b4226";
+  ctx.strokeRect(x, y - 78, 36, 28);
+  ctx.fillStyle = "#3a2a18";
+  ctx.font = "12px Tahoma, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(label, x + 18, y - 59);
+}
+
+function hole(ctx, x, y) {
+  ctx.fillStyle = "#3b2a1a";
+  ctx.beginPath();
+  ctx.ellipse(x + 14, y + 4, 14, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function sapling(ctx, x, y, t) {
+  const sway = Math.sin(t * 4) * 2;
+  ctx.fillStyle = "#6b4226";
+  ctx.fillRect(x + 4, y - 22, 5, 22);
+  ctx.fillStyle = "#3fa34d";
+  ctx.beginPath();
+  ctx.arc(x + 6 + sway, y - 28, 10, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawWater(ctx, state) {
+  for (const w of waterRects()) {
+    ctx.fillStyle = state.trashCollected === 3 ? "rgba(80,180,220,0.75)" : "rgba(70,110,90,0.8)";
+    ctx.fillRect(w.x, w.y, w.w, w.h);
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.fillRect(w.x, w.y, w.w, 6);
+  }
+}
+
+function drawActors(ctx, state, t) {
+  drawYaika(ctx, 380, GROUND_TOP);
+  drawNovice(ctx, 2280, GROUND_TOP);
+  if (!state.q3Correct || state.trashCollected < 3) {
+    fish(ctx, 3400, 500, t);
+  } else {
+    fish(ctx, 3360 + Math.sin(t * 2) * 30, 490, t);
+  }
+  if (!state.trash.bag) trash(ctx, 3185, 390, "bag");
+  if (!state.trash.bottle) trash(ctx, 3345, 350, "bottle");
+  if (!state.trash.foam) trash(ctx, 3505, 390, "foam");
+}
+
+function drawYaika(ctx, x, y) {
+  if (sprites.yaika) {
+    drawSprite(ctx, sprites.yaika, x, y, 1, 72);
+    return;
+  }
+  ctx.fillStyle = "#f3c7a0";
+  ctx.beginPath();
+  ctx.arc(x, y - 44, 11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#d9d3c4";
+  ctx.fillRect(x - 12, y - 34, 24, 16);
+  ctx.fillStyle = "#c45c8a";
+  ctx.fillRect(x - 14, y - 20, 28, 20);
+  ctx.fillStyle = "#eee4c8";
+  ctx.fillRect(x - 16, y - 22, 32, 8);
+}
+
+function drawNovice(ctx, x, y) {
+  if (sprites.novice) {
+    drawSprite(ctx, sprites.novice, x, y, 1, 64);
+    return;
+  }
+  ctx.fillStyle = "#f3c7a0";
+  ctx.beginPath();
+  ctx.arc(x, y - 44, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#e07a2f";
+  ctx.fillRect(x - 12, y - 34, 24, 34);
+  ctx.fillStyle = "#8b5a2b";
+  ctx.fillRect(x + 10, y - 28, 10, 16);
+}
+
+function fish(ctx, x, y, t) {
+  ctx.fillStyle = "#f0a04b";
+  ctx.beginPath();
+  ctx.ellipse(x, y + Math.sin(t * 3) * 2, 12, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function trash(ctx, x, y, kind) {
+  if (kind === "bag") {
+    ctx.fillStyle = "#d9d9d9";
+    ctx.fillRect(x, y - 20, 18, 20);
+  } else if (kind === "bottle") {
+    ctx.fillStyle = "#7ec8e3";
+    ctx.fillRect(x, y - 22, 10, 22);
+  } else {
+    ctx.fillStyle = "#f3e27a";
+    ctx.fillRect(x, y - 14, 20, 14);
+  }
+}
+
+function drawPlayer(ctx, player, t) {
+  const x = player.x + player.w / 2;
+  const y = player.y + player.h;
+  const pose = playerPose(player);
+  const bob = pose === "walk" ? Math.sin(t * 12) * 2 : 0;
+  const img = pickPlayerSprite(sprites, player, t);
+  if (img) {
+    drawSprite(ctx, img, x, y + bob, player.facing, 92);
+    return;
+  }
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(player.facing, 1);
+
+  const step = pose === "walk" ? Math.sin(t * 12) * 4 : 0;
+  const tuck = pose === "jump" ? 6 : 0;
+  ctx.fillStyle = "#1f3a73";
+  ctx.fillRect(-12, -22 + bob + tuck, 8, 18 - tuck);
+  ctx.fillRect(2, -22 + bob + tuck, 8, 18 - tuck);
+  ctx.fillRect(-10 + step, -10 + bob + tuck, 8, 10);
+  ctx.fillRect(2 - step, -10 + bob + tuck, 8, 10);
+  ctx.fillStyle = "#f5f5f5";
+  ctx.fillRect(-12, -36 + bob, 24, 16);
+  ctx.fillStyle = "#f3c7a0";
+  ctx.beginPath();
+  ctx.arc(0, -46 + bob, 11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#2a241c";
+  ctx.beginPath();
+  ctx.arc(0, -50 + bob, 11, Math.PI, 0);
+  ctx.fill();
+
+  // white squirrel on left shoulder (screen-left when facing right)
+  ctx.fillStyle = "#f7f3ea";
+  ctx.beginPath();
+  ctx.ellipse(-12, -34 + bob, 8, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(-18, -40 + bob + (pose === "jump" ? -3 : 0), 5, 8, -0.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#2a241c";
+  ctx.fillRect(-14, -36 + bob, 2, 2);
+
+  ctx.restore();
+}
+
+function drawNear(ctx, camX) {
+  if (sprites.near) {
+    const extra = 180;
+    const shift = (camX / (ZONE_W * 4)) * extra;
+    ctx.drawImage(sprites.near, -shift, 0, CANVAS_W + extra, CANVAS_H);
+    return;
+  }
+  ctx.fillStyle = "rgba(40,90,40,0.35)";
+  const x = -((camX * 1.2) % 180);
+  for (let i = -1; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(x + i * 180, CANVAS_H);
+    ctx.lineTo(x + i * 180 + 40, 470);
+    ctx.lineTo(x + i * 180 + 80, CANVAS_H);
+    ctx.fill();
+  }
+}
+
+function cameraX(player) {
+  return Math.max(0, Math.min(ZONE_W * 4, player.x + player.w / 2 - CANVAS_W / 2));
+}
+
+// ===== js/main.js =====
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const hudZone = document.getElementById("hud-zone");
+const hudItems = document.getElementById("hud-items");
+const promptEl = document.getElementById("prompt");
+const modal = document.getElementById("modal");
+const title = document.getElementById("title");
+const ending = document.getElementById("ending");
+const pause = document.getElementById("pause");
+const btnMute = document.getElementById("btn-mute");
+
+const audio = createGameAudio();
+
+let scene = "title";
+let state = createState();
+let player = createPlayer();
+let keys = {};
+let jumpBuffered = false;
+let modalKind = null;
+let modalData = null;
+let lastProgress = performance.now();
+let hintArrow = false;
+let lastTs = 0;
+let lastGate = null;
+let stepClock = 0;
+let camX = 0;
+const CAM_FOLLOW = 9; // กล้องตามแบบลื่น ยิ่งมากยิ่งตามไว
+
+const input = { left: false, right: false, jump: false };
+
+window.addEventListener("keydown", (e) => {
+  keys[e.code] = true;
+  audio.unlock();
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space"].includes(e.code)) e.preventDefault();
+  if (e.code === "Space" || e.code === "Enter") {
+    if (modalKind === "talk" || modalKind === "toast") {
+      e.preventDefault();
+      onInteract();
+      return;
+    }
+  }
+  if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") jumpBuffered = true;
+  if (e.code === "Escape") togglePause();
+  if (e.code === "KeyE") onInteract();
+  if (modalKind === "question" && ["Digit1", "Digit2", "Digit3"].includes(e.code)) {
+    const map = { Digit1: "ก", Digit2: "ข", Digit3: "ค" };
+    answerQuestion(map[e.code]);
+  }
+});
+window.addEventListener("keyup", (e) => {
+  keys[e.code] = false;
+});
+
+document.getElementById("btn-start").addEventListener("click", startGame);
+document.getElementById("btn-again").addEventListener("click", startGame);
+document.getElementById("btn-home").addEventListener("click", showTitle);
+document.getElementById("btn-resume").addEventListener("click", () => {
+  pause.hidden = true;
+});
+document.getElementById("btn-quit").addEventListener("click", showTitle);
+document.getElementById("btn-action").addEventListener("click", onInteract);
+if (btnMute) {
+  btnMute.addEventListener("click", () => {
+    audio.unlock();
+    if (audio._musicOn) {
+      audio.stopMusic();
+      btnMute.textContent = "เพลง: ปิด";
+      btnMute.setAttribute("aria-label", "เปิดเพลง");
+    } else {
+      audio.startMusic();
+      btnMute.textContent = "เพลง: เปิด";
+      btnMute.setAttribute("aria-label", "ปิดเพลง");
+    }
+  });
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) audio.stopMusic();
+});
+window.addEventListener("beforeunload", () => audio.stopMusic());
+
+function startGame() {
+  state = resetState();
+  player = createPlayer();
+  scene = "play";
+  modalKind = null;
+  title.hidden = true;
+  ending.hidden = true;
+  pause.hidden = true;
+  lastProgress = performance.now();
+  lastGate = null;
+  stepClock = 0;
+  camX = cameraX(player);
+  audio.unlock();
+  applyEvent(state, { type: "talk_yaika" });
+  openTalk("ยายกา", DIALOGUE.yaikaStart);
+}
+
+function showTitle() {
+  scene = "title";
+  title.hidden = false;
+  ending.hidden = true;
+  pause.hidden = true;
+  audio.stopMusic();
+  if (btnMute) {
+    btnMute.textContent = "เพลง: ปิด";
+    btnMute.setAttribute("aria-label", "เปิดเพลง");
+  }
+  closeModal();
+}
+
+function togglePause() {
+  if (scene !== "play" || modalKind) return;
+  pause.hidden = !pause.hidden;
+}
+
+function onInteract() {
+  if (scene !== "play" || pause.hidden === false) return;
+  if (modalKind === "talk" || modalKind === "toast") {
+    const after = modalData && modalData.after;
+    closeModal();
+    if (after === "ending") showEnding();
+    return;
+  }
+  if (modalKind) return;
+
+  const item = nearestInteractable(player, interactables(state));
+  if (!item) return;
+  if (item.type === "talk") {
+    applyEvent(state, { type: "talk_yaika" });
+    markProgress();
+    openTalk("ยายกา", DIALOGUE.yaikaStart);
+  } else if (item.type === "question") {
+    openQuestion(item.question);
+  } else if (item.type === "trash") {
+    const r = applyEvent(state, { type: "pickup_trash", id: item.id });
+    if (r.ok) {
+      markProgress();
+      audio.play("pickup");
+      openToast("เก็บขยะแล้ว");
+    }
+  } else if (item.type === "hole") {
+    const r = applyEvent(state, { type: "plant", hole: item.hole, zone: "mountain" });
+    if (r.ok) {
+      markProgress();
+      audio.play("plant");
+      openToast("ปลูกต้นไม้แล้ว");
+    }
+  } else if (item.type === "sort") {
+    openSort();
+  }
+}
+
+function openTalk(who, text, after = null) {
+  modalKind = "talk";
+  modalData = { after };
+  audio.play("talk");
+  modal.hidden = false;
+  modal.innerHTML = `<div class="box"><p class="who">${esc(who)}</p><p>${esc(text)}</p><button type="button" id="btn-next">ต่อไป</button></div>`;
+  document.getElementById("btn-next").addEventListener("click", onInteract);
+}
+
+function openToast(text) {
+  modalKind = "toast";
+  modalData = {};
+  modal.hidden = false;
+  modal.innerHTML = `<div class="box"><p>${esc(text)}</p><button type="button" id="btn-next">ต่อไป</button></div>`;
+  document.getElementById("btn-next").addEventListener("click", onInteract);
+}
+
+function openQuestion(id) {
+  const q = QUESTIONS[id];
+  const already = state[`${id}Correct`];
+  if (already) {
+    if (id === "q2") openTalk("สามเณรน้อย", DIALOGUE.noviceGive);
+    else openToast("ตอบข้อนี้แล้ว");
+    return;
+  }
+  modalKind = "question";
+  modalData = { id };
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const id = modalData.id;
+  const q = QUESTIONS[id];
+  const used = state[`${id}UsedHint`];
+  modal.hidden = false;
+  modal.innerHTML = `
+    <div class="box">
+      <p class="who">คำถาม</p>
+      <p>${esc(q.text)}</p>
+      <div class="choices">
+        <button data-c="ก">ก. ${esc(q.choices.ก)}</button>
+        <button data-c="ข">ข. ${esc(q.choices.ข)}</button>
+        <button data-c="ค">ค. ${esc(q.choices.ค)}</button>
+      </div>
+      <p id="q-feedback" class="feedback"></p>
+      ${used ? `<p class="hint">${esc(q.hint)}</p>` : `<button id="btn-hint">ขอใบ้ 1 ครั้ง</button>`}
+    </div>`;
+  modal.querySelectorAll("button[data-c]").forEach((b) => {
+    b.addEventListener("click", () => answerQuestion(b.getAttribute("data-c")));
+  });
+  const hb = document.getElementById("btn-hint");
+  if (hb) hb.addEventListener("click", useHint);
+}
+
+function useHint() {
+  applyEvent(state, { type: "hint", question: modalData.id });
+  renderQuestion();
+}
+
+function answerQuestion(choice) {
+  const id = modalData.id;
+  const r = applyEvent(state, { type: "answer", question: id, choice });
+  const fb = document.getElementById("q-feedback");
+  if (!r.ok) {
+    audio.play("wrong");
+    if (fb) fb.textContent = "ยังไม่ถูก ลองใหม่ได้";
+    return;
+  }
+  markProgress();
+  audio.play("correct");
+  if (id === "q2") {
+    openTalk("สามเณรน้อย", DIALOGUE.noviceGive);
+  } else {
+    openToast("ถูกต้อง!");
+  }
+}
+
+function openSort() {
+  if (state.treesPlanted < 3) {
+    openToast("ปลูกต้นไม้ให้ครบ 3 ต้นก่อนนะ");
+    return;
+  }
+  if (state.waterSorted) {
+    showEnding();
+    return;
+  }
+  modalKind = "sort";
+  modalData = { picked: [] };
+  const leftover = shuffle([...WATER_ORDER]);
+  modal.hidden = false;
+  modal.innerHTML = `
+    <div class="box">
+      <p class="who">เรียงสายน้ำให้ถูก</p>
+      <ol id="picked"></ol>
+      <div class="choices" id="sort-choices">
+        ${leftover.map((id) => `<button data-id="${id}">${esc(WATER_LABELS[id])}</button>`).join("")}
+      </div>
+      <p id="sort-fb" class="feedback"></p>
+    </div>`;
+  modal.querySelectorAll("#sort-choices button").forEach((b) => {
+    b.addEventListener("click", () => pickWater(b.getAttribute("data-id"), b));
+  });
+}
+
+function pickWater(id, btn) {
+  modalData.picked.push(id);
+  btn.disabled = true;
+  document.getElementById("picked").innerHTML = modalData.picked
+    .map((p, i) => `<li>${i + 1}. ${esc(WATER_LABELS[p])}</li>`)
+    .join("");
+  if (modalData.picked.length < 4) return;
+  const r = applyEvent(state, { type: "sort_water", order: modalData.picked });
+  if (!r.ok) {
+    audio.play("wrong");
+    document.getElementById("sort-fb").textContent = "ลำดับยังไม่ถูก ลองใหม่";
+    setTimeout(() => openSort(), 700);
+    return;
+  }
+  markProgress();
+  audio.play("correct");
+  openTalk("ยายกา", `${DIALOGUE.yaikaEnd1} ${DIALOGUE.yaikaEnd2}`, "ending");
+}
+
+function showEnding() {
+  scene = "ending";
+  closeModal();
+  ending.hidden = false;
+  title.hidden = true;
+  audio.stopMusic();
+  audio.play("win");
+  const stars = starCount(state);
+  document.getElementById("end-stars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+  document.getElementById("end-lines").innerHTML = ENDING_LINES.map((l) => `<li>${esc(l)}</li>`).join("");
+}
+
+function closeModal() {
+  modalKind = null;
+  modalData = null;
+  modal.hidden = true;
+  modal.innerHTML = "";
+}
+
+function markProgress() {
+  lastProgress = performance.now();
+  hintArrow = false;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function esc(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function loop(ts) {
+  const dt = lastTs ? (ts - lastTs) / 1000 : 0;
+  lastTs = ts;
+  if (scene === "play" && pause.hidden && !modalKind) {
+    input.left = !!(keys.ArrowLeft || keys.KeyA);
+    input.right = !!(keys.ArrowRight || keys.KeyD);
+    input.jump = jumpBuffered;
+    jumpBuffered = false;
+    const wasOnGround = player.onGround;
+    if (input.jump && wasOnGround) audio.play("jump");
+    const solids = buildSolids((zone) => canEnter(state, zone));
+    stepPlayer(player, input, solids, dt);
+    if (!wasOnGround && player.onGround) audio.play("land");
+    if (player.onGround && (input.left || input.right)) {
+      stepClock += dt;
+      if (stepClock >= 0.28) {
+        audio.play("step");
+        stepClock = 0;
+      }
+    } else {
+      stepClock = 0.28;
+    }
+    if (fellInWater(player)) {
+      audio.play("splash");
+      const zone = zoneNameAt(player.x);
+      const spawn = CHECKPOINTS[zone] || CHECKPOINTS.stream;
+      player.x = spawn.x;
+      player.y = spawn.y;
+      player.vx = 0;
+      player.vy = 0;
+      player.onGround = true;
+      camX = cameraX(player);
+    }
+    const gate = touchingGate(player, solids);
+    if (gate && lastGate !== gate.gate) {
+      lastGate = gate.gate;
+      openToast(GATE_HINTS[gate.gate] || "ยังไปต่อไม่ได้");
+    } else if (!gate) {
+      lastGate = null;
+    }
+    if (performance.now() - lastProgress > 45000) hintArrow = true;
+  }
+  if (scene === "play") {
+    const camTarget = cameraX(player);
+    camX += (camTarget - camX) * Math.min(1, dt * CAM_FOLLOW);
+    drawWorld(ctx, camX, player, state, ts / 1000);
+    if (hintArrow) drawArrow(ctx);
+    updateHud();
+  }
+  requestAnimationFrame(loop);
+}
+
+function drawArrow(ctx) {
+  ctx.fillStyle = "rgba(255,220,80,0.9)";
+  ctx.beginPath();
+  ctx.moveTo(900, 250);
+  ctx.lineTo(860, 230);
+  ctx.lineTo(860, 270);
+  ctx.fill();
+}
+
+function updateHud() {
+  hudZone.textContent = ZONE_NAMES[zoneNameAt(player.x)];
+  hudItems.textContent = `กล้าไม้ ${state.saplings}/3 · ขยะ ${state.trashCollected}/3 · ต้นที่ปลูก ${state.treesPlanted}/3`;
+  const item = nearestInteractable(player, interactables(state));
+  promptEl.hidden = !item || !!modalKind;
+  if (item) promptEl.textContent = "กด E";
+}
+
+async function boot() {
+  canvas.width = CANVAS_W;
+  canvas.height = CANVAS_H;
+  title.hidden = false;
+  ending.hidden = true;
+  setSprites(await loadSprites());
+  requestAnimationFrame(loop);
+}
+
+boot();
+
+})();
+</script>
+</body>
+</html>
