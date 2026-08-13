@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>สายน้ำจากภูผีปอบ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/game.css" />
+</head>
+<body>
+  <div id="wrap">
+    <div id="stage">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div id="hud">
+        <span id="hud-zone">โฮมสเตย์ยายกา</span>
+        <span id="hud-items">กล้าไม้ 0/3 · ขยะ 0/3 · ต้นที่ปลูก 0/3</span>
+      </div>
+      <div id="prompt" hidden>กด E</div>
+      <div id="modal" class="overlay" hidden></div>
+      <div id="title" class="overlay">
+        <div class="panel">
+          <h1>สายน้ำจากภูผีปอบ</h1>
+          <p class="sub">เกมวิทยาศาสตร์สิ่งแวดล้อม · โรงเรียนบ้านวังน้ำมอก</p>
+          <p>เดิน สำรวจ กระโดดตามสายน้ำ จากโฮมสเตย์ยายกาไปภูผีปอบ</p>
+          <p class="hint">ลูกศรหรือ A D เดิน · ขึ้นหรือ Space กระโดด · E พูด เก็บ ปลูก</p>
+          <div class="row">
+            <button id="btn-start">เริ่มเล่น</button>
+          </div>
+        </div>
+      </div>
+      <div id="ending" class="overlay" hidden>
+        <div class="panel">
+          <h1>จบด่านแรก</h1>
+          <div id="end-stars" class="stars"></div>
+          <ol id="end-lines"></ol>
+          <div class="row">
+            <button id="btn-again">เล่นอีกครั้ง</button>
+            <button id="btn-home">กลับหน้าชื่อเกม</button>
+          </div>
+        </div>
+      </div>
+      <div id="pause" class="overlay" hidden>
+        <div class="panel">
+          <h1>พัก</h1>
+          <div class="row">
+            <button id="btn-resume">ทำต่อ</button>
+            <button id="btn-quit">กลับหน้าชื่อเกม</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
