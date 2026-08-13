@@ -7,7 +7,7 @@ import {
   zoneNameAt,
 } from "./engine.js";
 
-let sprites = { player: null, yaika: null, novice: null };
+let sprites = { player: null, yaika: null, novice: null, far: null };
 
 export function setSprites(next) {
   sprites = next || sprites;
@@ -25,8 +25,12 @@ function drawSprite(ctx, img, x, y, facing = 1, height = 64) {
 export function drawWorld(ctx, camX, player, state, t) {
   ctx.save();
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-  drawSky(ctx);
-  drawFar(ctx, camX);
+  if (sprites.far) {
+    drawFarImage(ctx, camX);
+  } else {
+    drawSky(ctx);
+    drawFar(ctx, camX);
+  }
   drawMid(ctx, camX);
   ctx.translate(-camX, 0);
   drawZones(ctx, state, t);
@@ -44,6 +48,13 @@ function drawSky(ctx) {
   g.addColorStop(1, "#8fd36a");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+}
+
+function drawFarImage(ctx, camX) {
+  const img = sprites.far;
+  const extra = 120;
+  const shift = (camX / (ZONE_W * 4)) * extra;
+  ctx.drawImage(img, -shift, 0, CANVAS_W + extra, CANVAS_H);
 }
 
 function drawFar(ctx, camX) {
@@ -82,6 +93,12 @@ function mountain(ctx, x, y, w, h) {
 
 function drawMid(ctx, camX) {
   const shift = -(camX * 0.4);
+  if (sprites.far) {
+    for (let i = 0; i < 8; i++) {
+      tree(ctx, shift + 140 + i * 260, 338, 18 + (i % 3) * 4, "rgba(45,110,55,0.45)");
+    }
+    return;
+  }
   for (let i = 0; i < 14; i++) {
     tree(ctx, shift + 80 + i * 170, 300, 26 + (i % 3) * 6, "#3d8f4a");
   }
