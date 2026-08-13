@@ -4,10 +4,11 @@ export const SPRITE_PATHS = {
   novice: "assets/characters/novice.png",
   far: "assets/backgrounds/phu-far.png",
   mid: "assets/backgrounds/phu-mid.png",
+  near: "assets/backgrounds/phu-near.png",
 };
 
 export async function loadSprites() {
-  const sprites = { player: null, yaika: null, novice: null, far: null, mid: null };
+  const sprites = { player: null, yaika: null, novice: null, far: null, mid: null, near: null };
   await Promise.all(
     Object.entries(SPRITE_PATHS).map(async ([key, path]) => {
       sprites[key] = await tryLoad(path);

@@ -7,7 +7,7 @@ import {
   zoneNameAt,
 } from "./engine.js";
 
-let sprites = { player: null, yaika: null, novice: null, far: null, mid: null };
+let sprites = { player: null, yaika: null, novice: null, far: null, mid: null, near: null };
 
 export function setSprites(next) {
   sprites = next || sprites;
@@ -378,6 +378,12 @@ export function drawPlayer(ctx, player, t) {
 }
 
 function drawNear(ctx, camX) {
+  if (sprites.near) {
+    const extra = 180;
+    const shift = (camX / (ZONE_W * 4)) * extra;
+    ctx.drawImage(sprites.near, -shift, 0, CANVAS_W + extra, CANVAS_H);
+    return;
+  }
   ctx.fillStyle = "rgba(40,90,40,0.35)";
   const x = -((camX * 1.2) % 180);
   for (let i = -1; i < 8; i++) {
