@@ -5,10 +5,11 @@
 
 | ไฟล์ | ใช้เป็น |
 |------|---------|
-| `nong-mok.png` | น้องมอก ก้าวขา A |
-| `nong-mok-walk-b.png` | น้องมอก ก้าวขา B สลับกับ A |
-| `nong-mok-idle.png` | น้องมอก ท่ายืน |
-| `nong-mok-jump.png` | น้องมอก ท่ากระโดด |
+| `nong-mok.png` | น้องมอกภาพหลัก |
+| `nong-mok-walk-right.png` | ก้าวขาขวา เท้าหน้ายก |
+| `nong-mok-walk-left.png` | ก้าวขาซ้าย เท้าหลังยก |
+| `nong-mok-idle.png` | ท่ายืน |
+| `nong-mok-jump.png` | ท่ากระโดด |
 | `yaika.png` | ยายกา |
 | `novice.png` | สามเณรน้อย |
 

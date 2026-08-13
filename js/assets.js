@@ -2,7 +2,8 @@ export const SPRITE_PATHS = {
   player: "assets/characters/nong-mok.png",
   playerIdle: "assets/characters/nong-mok-idle.png",
   playerJump: "assets/characters/nong-mok-jump.png",
-  playerWalkB: "assets/characters/nong-mok-walk-b.png",
+  playerWalkRight: "assets/characters/nong-mok-walk-right.png",
+  playerWalkLeft: "assets/characters/nong-mok-walk-left.png",
   yaika: "assets/characters/yaika.png",
   novice: "assets/characters/novice.png",
   far: "assets/backgrounds/phu-far.png",
@@ -26,7 +27,7 @@ export function walkFrameIndex(time, frameCount) {
 
 export function walkFrames(sprites) {
   if (!sprites) return [];
-  return [sprites.player, sprites.playerWalkB].filter(Boolean);
+  return [sprites.playerWalkRight, sprites.playerWalkLeft].filter(Boolean);
 }
 
 export function pickPlayerSprite(sprites, player, time = 0) {
@@ -35,7 +36,7 @@ export function pickPlayerSprite(sprites, player, time = 0) {
   if (pose === "jump") return sprites.playerJump || sprites.player || null;
   if (pose === "idle") return sprites.playerIdle || sprites.player || null;
   const frames = walkFrames(sprites);
-  if (!frames.length) return null;
+  if (!frames.length) return sprites.player || null;
   return frames[walkFrameIndex(time, frames.length)];
 }
 
