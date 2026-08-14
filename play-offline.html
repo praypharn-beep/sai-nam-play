@@ -164,25 +164,26 @@ body.playing #btn-mute { display: block; }
   body.playing #touch-controls { display: none; }
 }
 
-/* จอแนวตั้งบนมือถือ: บอกให้หมุนเป็นแนวนอน (เกมออกแบบเล่นแนวนอน) */
+/* มือถือแนวตั้ง: บังคับหมุนเกมเป็นแนวนอนอัตโนมัติ ไม่ต้องเปิด auto-rotate
+   ผู้เล่นแค่ตะแคงเครื่องดู ก็เห็นเกมแนวนอนเต็มจอ */
 #rotate { display: none; }
 @media (orientation: portrait) and (max-width: 900px) {
-  #rotate {
-    display: flex;
+  html, body { overflow: hidden; }
+  #wrap {
     position: fixed;
-    inset: 0;
-    z-index: 20;
-    background: #16324f;
-    color: #fff8e7;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
+    top: 50%;
+    left: 50%;
+    width: 100vh;
+    height: 100vw;
+    transform-origin: center center;
+    transform: translate(-50%, -50%) rotate(90deg);
+    padding: 8px;
+  }
+  /* ในกรอบที่หมุนแล้ว ความกว้างอิงจาก 100vh (ด้านยาวของจอ) */
+  #stage {
+    width: min(960px, calc(100vh - 16px), calc((100vw - 16px) * 16 / 9));
   }
 }
-.rotate-inner { max-width: 320px; }
-.rotate-icon { font-size: 64px; margin-bottom: 12px; }
-#rotate p { font-size: 22px; font-weight: 700; line-height: 1.6; margin: 0; }
 
 </style>
 </head>
@@ -236,12 +237,6 @@ body.playing #btn-mute { display: block; }
           </div>
         </div>
       </div>
-    </div>
-  </div>
-  <div id="rotate">
-    <div class="rotate-inner">
-      <div class="rotate-icon">🔄</div>
-      <p>หมุนโทรศัพท์เป็นแนวนอน<br />เพื่อเล่นเกม</p>
     </div>
   </div>
   <script>
