@@ -104,13 +104,15 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   line-height: 1;
 }
 .overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
+  z-index: 10;
   background: rgba(16, 36, 56, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
 }
 .overlay[hidden], #prompt[hidden] { display: none; }
 .panel, .box {
@@ -141,3 +143,12 @@ button:hover { background: #ffd45c; }
 .feedback { min-height: 1.2em; color: #a33; font-weight: 700; }
 .stars { font-size: 36px; color: #e0a800; letter-spacing: 6px; margin: 8px 0 12px; }
 ol { padding-left: 22px; }
+
+/* แสดงปุ่มควบคุมเฉพาะตอนเล่นจริง กันไปทับหน้าชื่อเกม จบเกม กล่องคุย และเมนูพัก */
+#touch-controls, #btn-action, #btn-mute { display: none; }
+body.playing #touch-controls { display: flex; }
+body.playing #btn-action { display: block; }
+body.playing #btn-mute { display: block; }
+@media (hover: hover) and (pointer: fine) {
+  body.playing #touch-controls { display: none; }
+}

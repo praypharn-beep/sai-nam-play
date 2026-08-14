@@ -114,13 +114,15 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   line-height: 1;
 }
 .overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
+  z-index: 10;
   background: rgba(16, 36, 56, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
 }
 .overlay[hidden], #prompt[hidden] { display: none; }
 .panel, .box {
@@ -151,6 +153,15 @@ button:hover { background: #ffd45c; }
 .feedback { min-height: 1.2em; color: #a33; font-weight: 700; }
 .stars { font-size: 36px; color: #e0a800; letter-spacing: 6px; margin: 8px 0 12px; }
 ol { padding-left: 22px; }
+
+/* แสดงปุ่มควบคุมเฉพาะตอนเล่นจริง กันไปทับหน้าชื่อเกม จบเกม กล่องคุย และเมนูพัก */
+#touch-controls, #btn-action, #btn-mute { display: none; }
+body.playing #touch-controls { display: flex; }
+body.playing #btn-action { display: block; }
+body.playing #btn-mute { display: block; }
+@media (hover: hover) and (pointer: fine) {
+  body.playing #touch-controls { display: none; }
+}
 
 </style>
 </head>
@@ -1471,6 +1482,7 @@ function showTitle() {
   title.hidden = false;
   ending.hidden = true;
   pause.hidden = true;
+  document.body.classList.remove("playing");
   audio.stopMusic();
   if (btnMute) {
     btnMute.textContent = "เพลง: ปิด";
@@ -1649,6 +1661,7 @@ function showEnding() {
   closeModal();
   ending.hidden = false;
   title.hidden = true;
+  document.body.classList.remove("playing");
   audio.stopMusic();
   audio.play("win");
   const stars = starCount(state);
@@ -1745,6 +1758,7 @@ function drawArrow(ctx) {
 }
 
 function updateHud() {
+  document.body.classList.toggle("playing", pause.hidden && !modalKind);
   hudZone.textContent = ZONE_NAMES[zoneNameAt(player.x)];
   hudItems.textContent = `กล้าไม้ ${state.saplings}/3 · ขยะ ${state.trashCollected}/3 · ต้นที่ปลูก ${state.treesPlanted}/3`;
   const item = nearestInteractable(player, interactables(state));

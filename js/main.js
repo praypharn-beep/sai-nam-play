@@ -148,6 +148,7 @@ function showTitle() {
   title.hidden = false;
   ending.hidden = true;
   pause.hidden = true;
+  document.body.classList.remove("playing");
   audio.stopMusic();
   if (btnMute) {
     btnMute.textContent = "เพลง: ปิด";
@@ -326,6 +327,7 @@ function showEnding() {
   closeModal();
   ending.hidden = false;
   title.hidden = true;
+  document.body.classList.remove("playing");
   audio.stopMusic();
   audio.play("win");
   const stars = starCount(state);
@@ -422,6 +424,7 @@ function drawArrow(ctx) {
 }
 
 function updateHud() {
+  document.body.classList.toggle("playing", pause.hidden && !modalKind);
   hudZone.textContent = ZONE_NAMES[zoneNameAt(player.x)];
   hudItems.textContent = `กล้าไม้ ${state.saplings}/3 · ขยะ ${state.trashCollected}/3 · ต้นที่ปลูก ${state.treesPlanted}/3`;
   const item = nearestInteractable(player, interactables(state));
