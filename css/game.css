@@ -15,7 +15,8 @@ html, body {
 }
 #stage {
   position: relative;
-  width: min(960px, calc(100vw - 32px));
+  /* พอดีทั้งความกว้างและความสูง คงอัตราส่วน 16:9 (จอแนวนอนได้ภาพใหญ่เต็มจอ) */
+  width: min(960px, calc(100vw - 16px), calc((100vh - 16px) * 16 / 9));
   aspect-ratio: 16 / 9;
   height: auto;
   box-shadow: 0 16px 40px rgba(0,0,0,0.35);
@@ -83,7 +84,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 }
 @media (max-width: 600px) {
   #wrap { padding: 8px; }
-  #stage { width: calc(100vw - 16px); border-radius: 8px; }
+  #stage { border-radius: 8px; }
   #hud { inset: 6px 8px auto 8px; font-size: clamp(11px, 2.7vw, 16px); gap: 6px; }
   #hud-items { text-align: right; }
   #btn-action { right: 8px; bottom: 78px; font-size: 14px; padding: 6px 8px; }
@@ -152,3 +153,23 @@ body.playing #btn-mute { display: block; }
 @media (hover: hover) and (pointer: fine) {
   body.playing #touch-controls { display: none; }
 }
+
+/* จอแนวตั้งบนมือถือ: บอกให้หมุนเป็นแนวนอน (เกมออกแบบเล่นแนวนอน) */
+#rotate { display: none; }
+@media (orientation: portrait) and (max-width: 900px) {
+  #rotate {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: #16324f;
+    color: #fff8e7;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+}
+.rotate-inner { max-width: 320px; }
+.rotate-icon { font-size: 64px; margin-bottom: 12px; }
+#rotate p { font-size: 22px; font-weight: 700; line-height: 1.6; margin: 0; }
